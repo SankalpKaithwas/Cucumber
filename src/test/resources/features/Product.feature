@@ -18,14 +18,14 @@ Feature: Product Feature
 #    When the client sends GET request to "/api/products/3"
     When the client sends GET request to "<endpoint>" for <id>
     And the response XML should have:
-      | Success | true                        |
+      | Success | true                          |
       | Message | Products fetched successfully |
-      | Id      | 3                          |
-      | Name    | Mechanical Keyboard                |
-      | Price   | 110.0                       |
+      | Id      | 3                             |
+      | Name    | Mechanical Keyboard           |
+      | Price   | 110.0                         |
     Examples:
-      | id | |endpoint|
-      | 3  | | /api/products/      |
+      | id |  | endpoint       |
+      | 3  |  | /api/products/ |
 
 
   Scenario: Get Product by ID returning json response
@@ -34,44 +34,46 @@ Feature: Product Feature
     And the path parameter "id" is set to 1
     When the client sends GET request to "/api/products/{id}"
     And the response JSON should have:
-      | Success | true                        |
+      | Success | true                          |
       | Message | Products fetched successfully |
-      | Id      | 1                          |
-      | Name    | Keyboard                |
-      | Price   | 45.0                       |
+      | Id      | 1                             |
+      | Name    | Keyboard                      |
+      | Price   | 45.0                          |
 
-    # need to correct
+
   Scenario: Add Product Request and response returning xml
     Given the product API is available at "http://localhost:8080"
     Given the request header "Content-Type" is set to "application/xml"
-    Given the request payload is:
+    Given the request header "Accept" is set to "application/xml"
+    Given the xml request payload is:
     """
       <Product>
-        <name>Sony Bravia</name>
-        <price>199.99</price>
+        <name>Oneplus 1</name>
+        <price>699.99</price>
       </Product>
     """
     When the client sends POST request to "/api/products"
+    And the returned product id should match the database record for product "Oneplus 1"
     And the response XML should have:
       | Success | true                        |
-      | Message | Product Created Succesfully |
-      | Name    | Sony Bravia              |
-      | Price   |  199.99                      |
+      | Message | Product Created Successfully |
+      | Name    | Oneplus 1                   |
+      | Price   | 699.99                      |
 
   Scenario: Add Product Request and response returning JSON
     Given the product API is available at "http://localhost:8080"
     Given the request header "Content-Type" is set to "application/json"
-    Given the request payload is:
+    Given the Json request payload is:
                                 """
                                   {
-                                    "name": "Black Belt",
-                                    "price": 25.50
+                                    "name": "Carpet",
+                                    "price": 2.50
                                   }
                                   """
     When the client sends POST request to "/api/products"
-    And the returned product id should match the database record for product "Black Belt"
+    And the returned product id should match the database record for product "Carpet"
     And the response JSON should have:
       | Success | true                        |
-      | Message | Product Created Succesfully |
-      | Name    | Black Belt                |
-      | Price   | 25.5                       |
+      | Message | Product Created Successfully |
+      | Name    | Carpet                  |
+      | Price   | 2.5                        |

@@ -102,6 +102,10 @@ public class ProductStepDefinitions {
                 .log().all(); // Logs the outgoing request details(Logs request headers, method, URL, and body to the console)
     }
 
+    // {string} automatically matches text inside double quotes ("...") or single quotes ('...')
+    // {int} matches integer values
+    // {double} or {float} matches decimal numbers
+    // {boolean} matches true/false
     // 3. Chain headers (like Accept: application/xml or application/json)
     @Given("the request header {string} is set to {string}")
     public void setHeader(String headerName, String headerValue) {
@@ -115,10 +119,10 @@ public class ProductStepDefinitions {
     }
 
     // 5. Attach a JSON payload body (for POST / PUT calls)
-    @Given("the request payload is:")
-    public void setRequestBody(String jsonOrXmlPayload) {
+    @Given("the Json request payload is:")
+    public void setJsonRequestBody(String jsonPayload) {
         this.request.contentType(ContentType.JSON)
-                .body(jsonOrXmlPayload);
+                .body(jsonPayload);
     }
 
     // 6. Execute GET and store the resulting Response
@@ -130,6 +134,13 @@ public class ProductStepDefinitions {
 
         // Immediately log the response in the console
         this.response.then().log().all();
+    }
+
+    // Attach a XML payload body (for POST / PUT calls)
+    @Given("the xml request payload is:")
+    public void setXmlRequestBody(String xmlPayload) {
+        this.request.contentType(ContentType.XML)
+                .body(xmlPayload);
     }
 
     @When("the client sends PATCH request to {string}")
