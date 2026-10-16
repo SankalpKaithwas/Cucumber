@@ -1,6 +1,8 @@
 package stepDefinitions;
 
 import io.cucumber.datatable.DataTable;
+import io.cucumber.java.After;
+import io.cucumber.java.PendingException;
 import io.cucumber.java.en.And;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
@@ -9,17 +11,33 @@ import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
 import io.restassured.response.Response;
 import io.restassured.specification.RequestSpecification;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.junit.jupiter.api.Assertions;
 import utils.DatabaseHelper.DatabaseHelper;
 
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class ProductStepDefinitions {
+    private static final Log log = LogFactory.getLog(ProductStepDefinitions.class);
     // Instantiate your JDBC helper
     private final DatabaseHelper dbHelper = new DatabaseHelper();
 
-//    // 1. Declare the specification and response fields
+    // Id of a product seeded straight into MySQL by the scenario (null if none)
+    private Integer createdProductId;
+
+    private String baseUrlUpdated;
+    private Integer existingProductId;
+    private String originalName;
+    private Double originalPrice;
+
+    //    // 1. Declare the specification and response fields
 //    private String baseUrl;
 //    private Response response;
 //    private RequestSpecification request;
@@ -28,7 +46,7 @@ public class ProductStepDefinitions {
 //    // before actually firing the request.
 //
 //
-//    // 2. Initialize with base configuration
+    // 2. Initialize with base configuration
 //    @Given("the product API is available at {string}")
 //    public void setBaseUrl(String url) {
 //        this.baseUrl = url;
@@ -58,9 +76,11 @@ public class ProductStepDefinitions {
         // Validating XML nodes directly via XML path
         expectedValues.forEach((key, expectedVal) -> {
             String actualVal = switch (key) {
+                case "StatusCode" -> response.xmlPath().getString("ApiResponse.StatusCode");
                 case "Success" -> response.xmlPath().getString("ApiResponse.Success");
                 case "Message" -> response.xmlPath().getString("ApiResponse.Message");
                 case "Id" -> response.xmlPath().getString("ApiResponse.Data.Id");
+                case "Errors" -> response.xmlPath().getString("ApiResponse.Data.Errors");
                 case "Name" -> response.xmlPath().getString("ApiResponse.Data.Name");
                 case "Price" -> response.xmlPath().getString("ApiResponse.Data.Price");
                 default -> throw new IllegalArgumentException("Unknown field: " + key);
@@ -76,8 +96,10 @@ public class ProductStepDefinitions {
         // Validating XML nodes directly via XML path
         expectedValues.forEach((key, expectedVal) -> {
             String actualVal = switch (key) {
+                case "StatusCode" -> response.jsonPath().getString("StatusCode");
                 case "Success" -> response.jsonPath().getString("Success");
                 case "Message" -> response.jsonPath().getString("Message");
+                case "Errors" -> response.jsonPath().getString("Errors");
                 case "Id" -> response.jsonPath().getString("Data.Id");
                 case "Name" -> response.jsonPath().getString("Data.Name");
                 case "Price" -> response.jsonPath().getString("Data.Price");
@@ -88,7 +110,9 @@ public class ProductStepDefinitions {
     }
 
 
-    /** If using RequestSpecification */
+    /**
+     * If using RequestSpecification
+     */
 
     // 1. Declare the specification and response fields
     private RequestSpecification request;
@@ -100,6 +124,7 @@ public class ProductStepDefinitions {
         this.request = RestAssured.given()
                 .baseUri(baseUrl)
                 .log().all(); // Logs the outgoing request details(Logs request headers, method, URL, and body to the console)
+        this.baseUrlUpdated = baseUrl;
     }
 
     // {string} automatically matches text inside double quotes ("...") or single quotes ('...')
@@ -138,19 +163,28 @@ public class ProductStepDefinitions {
 
     // Attach a XML payload body (for POST / PUT calls)
     @Given("the xml request payload is:")
-    public void setXmlRequestBody(String xmlPayload) {
+    public void set_Xml_Request_Body(String xmlPayload) {
         this.request.contentType(ContentType.XML)
                 .body(xmlPayload);
     }
 
-    @When("the client sends PATCH request to {string}")
-    public void sendPatchRequest(String endpoint) {
-        this.response = this.request
-                .when()
-                .patch(endpoint);
+    @When("the client sends {string} request to {string}")
+    public void sendPatchRequest(String requestType, String endpoint) {
+        if (requestType.equalsIgnoreCase("GET")) {
+            this.response = this.request
+                    .when()
+                    .get(endpoint);
 
-        // Immediately log the response in the console
-        this.response.then().log().all();
+            // Immediately log the response in the console
+            this.response.then().log().all();
+        } else if (requestType.equalsIgnoreCase("PATCH")) {
+            this.response = this.request
+                    .when()
+                    .patch(endpoint);
+
+            // Immediately log the response in the console
+            this.response.then().log().all();
+        }
     }
 
     // 7. Execute POST and store the resulting Response
@@ -164,7 +198,7 @@ public class ProductStepDefinitions {
     }
 
     @When("the client sends GET request to {string} for {int}")
-    public void sendGetRequestWithId(String endpoint, int productId) {
+    public void send_Get_Request_With_Id(String endpoint, int productId) {
         this.response = this.request
                 .when()
                 .get(endpoint + productId);
@@ -172,31 +206,214 @@ public class ProductStepDefinitions {
         this.response.then().log().all();
     }
 
-    @And("the path parameter {string} is set to {int}")
-    public void thePathParameterIsSetTo(String paramName, int paramValue) {
-            this.request.pathParam(paramName, paramValue);
+    @And("the path parameter {string} is set to {string}")
+    public void the_Path_Parameter_Is_Set_To(String paramName, String paramValue) {
+        switch (paramName) {
+            case "id":
+                this.request.pathParam(paramName, Integer.parseInt(paramValue));
+                break;
+            case "anything":
+                this.request.pathParam(paramName, "anything");
+                break;
+            default:
+                this.request.pathParam(paramName, "default");
+                break;
         }
+    }
 
     @And("the returned product id should match the database record for product {string}")
-    public void theReturnedProductIdShouldMatchTheDatabaseRecordForProduct(String productName) throws SQLException {
-         // 1. Extract ID from API response (supports either JSON or XML)
-            int responseId;
-            String contentType = response.getContentType();
+    public void the_Returned_Product_Id_Should_Match_The_Database_Record_For_Product(
+            String productName) throws SQLException {
+        // 1. Fetch the corresponding ID directly from MySQL via plain JDBC
+        Integer dbId = dbHelper.getLatestProductIdByName(productName);
+        System.out.println("Product Id- " + dbId);
+        // 2. Verify they match
+        Assertions.assertNotNull(dbId, "No matching record found in MySQL for product: " + productName);
+        Assertions.assertEquals(dbId, createdProductId, "API response ID does not match MySQL database ID!");
+    }
 
-            if (contentType != null && contentType.contains("xml")) {
-                responseId = response.xmlPath().getInt("ApiResponse.Data.Id");
-            } else {
-                responseId = response.jsonPath().getInt("Data.Id");
-            }
 
-            // 2. Fetch the corresponding ID directly from MySQL via plain JDBC
-            Integer dbId = dbHelper.getLatestProductIdByName(productName);
-            System.out.println("Product Id- " + dbId);
-            // 3. Verify they match
-            Assertions.assertNotNull(dbId, "No matching record found in MySQL for product: " + productName);
-            Assertions.assertEquals(dbId, responseId, "API response ID does not match MySQL database ID!");
+    @Then("the product id is saved from the response")
+    public void the_ProductId_Is_Saved_From_The_Response() {
+        String contentType = response.contentType();
+        if (contentType != null && contentType.contains("xml")) {
+            createdProductId = response.getBody().xmlPath().getInt("ApiResponse.Data.Id");
+        } else {
+            createdProductId = response.jsonPath().getInt("Data.Id");
         }
+        System.out.println("createdProductId - " + createdProductId);
+    }
+
+    @Then("the response status code should be {int}")
+    public void the_Response_Status_Code_Should_Be(int expectedStatusCode) {
+        int statusCode = response.getStatusCode();
+        Assertions.assertEquals(expectedStatusCode, statusCode, "Unexpected HTTP status code");
+    }
+
+    @Then("the response Message should be {string}")
+    public void the_Response_Message_Should_Be(String expectedMessage) {
+        String message = response.getBody().jsonPath().get("Message");
+        Assertions.assertEquals(expectedMessage, message, "Unexpected HTTP status code");
+    }
+
+    @Then("the response Errors should be {string}")
+    public void the_Response_Errors_Should_Be(String expectedErrors) {
+        String errors = response.getBody().jsonPath().get("Errors");
+        Assertions.assertEquals(expectedErrors, errors, "Unexpected HTTP status code");
+    }
+
+    @Then("the client sends DELETE request to {string}")
+    public void the_Client_Sends_DELETE_Request_To(String endPoint) {
+        this.response = request
+                .when()
+                .delete(endPoint);
+        this.response.then().log().all();
+    }
+
+    @Then("the product should no longer exist in the database")
+    public void the_Product_Should_No_Longer_Exist_In_The_Database() {
+        Assertions.assertNotNull(createdProductId, "No seeded product id to check");
+        Assertions.assertFalse(dbHelper.productExists(createdProductId),
+                "Product " + createdProductId + " is still in the database after DELETE");
+    }
+
+    @And("the path parameter {string} is set to the created product id")
+    public void the_PathParameter_Is_Set_To_The_CreatedProductId(String id) {
+        this.request.pathParams(id, createdProductId);
+    }
+
+    @Given("A new request is prepared")
+    public void a_New_Request_Is_Prepared() {
+        setupBaseRequest(baseUrlUpdated);
+    }
+
+    @Given("the existing product with id {int} is remembered")
+    public void the_Existing_Product_With_Id_Int_Is_Remembered(int id) {
+        existingProductId = id;
+        originalName = dbHelper.getProductNameById(id);
+        originalPrice = dbHelper.getProductPriceById(id);
+        Assertions.assertNotNull(originalName, "Product " + id
+                + "does not exist. This Scneario needs it to be there.");
+
+    }
 
 
+    // Put the original values back through the PATCH endpoint, like the other cleanup
+    @After("@restoreProduct")
+    public void restore_Existing_Product() {
+        var body = "{\"name\":\"" + originalName + "\",\"price\":" + originalPrice + "}";
+//        String body = "<Product><name>" + originalName + "</name><price>" + originalPrice + "</price></Product>";
 
+        if (existingProductId != null && baseUrlUpdated != null) {
+            Response restored = RestAssured.given()
+                    .baseUri(baseUrlUpdated)
+                    .contentType(ContentType.JSON)
+//                    .contentType(ContentType.XML)
+                    .body(body).log().all().patch("/api/products/" + existingProductId).then()
+                    .log().all()   // <-- Prints entire response (status, headers, body) to console
+                    .extract().response();
+            existingProductId = null;
+            Assertions.assertEquals(200, restored.getStatusCode(),
+                    "RESTORE FAILED - product data was left modified: " + restored.asString());
+        }
+    }
+
+    @And("the product {string} in the database should be {string}")
+    public void the_Product_In_The_Database_Should_Be(String name, String value) {
+        if (name.equalsIgnoreCase("name")) {
+            Assertions.assertEquals(value, dbHelper.getProductNameById(existingProductId),
+                    "Product name - " + name + " matches the updated value with - " + value);
+        } else if (name.equalsIgnoreCase("price")) {
+            Assertions.assertEquals(Integer.parseInt(value), dbHelper.getProductPriceById(existingProductId),
+                    "Product name - " + name + " matches the updated value with - " + value);
+        }
+    }
+
+    @Then("the product {string} in the database should be unchanged")
+    public void the_Product_Price_Should_Be_Unchanged(String product_check) {
+        if (Objects.equals(product_check, "price")) {
+            Assertions.assertEquals(originalPrice, dbHelper.getProductPriceById(existingProductId), 0.001);
+        }
+    }
+
+    @And("the response {string} should be {string}")
+    public void theResponseShouldBe(String tag, String value) {
+        String tagValue = "";
+        List<String> names = new ArrayList<>();
+        if (response.getContentType().contains("json")) {
+            switch (tag) {
+                case "Success" -> {
+                    tagValue = response.getBody().jsonPath().getString("Success");
+                    Assertions.assertEquals(value, tagValue, "The given value does not match.");
+                }
+                case "Data" -> {
+                    names = response.getBody().jsonPath().getList("Data.Name");
+//                    System.out.println("Data = " + names);
+                    Assertions.assertFalse(names.isEmpty(), "No products found in response");
+                    names.forEach(n -> assertTrue(n.toLowerCase().contains(value.toLowerCase()),
+                            n + " does not contain " + value));
+                }
+                case "Message" -> {
+                    tagValue = response.getBody().jsonPath().getString("Message");
+                    Assertions.assertEquals(value, tagValue, "The given value does not match.");
+                }
+                default -> throw new IllegalArgumentException("Unsupported tag: [" + tag + "]");
+            }
+        } else if (response.getContentType().contains("xml")) {
+            switch (tag) {
+                case "Success" -> {
+                    tagValue = response.getBody().xmlPath().getString("ApiResponse.Success");
+                    Assertions.assertEquals(value, tagValue, "The given value does not match.");
+                }
+                case "Data" -> {
+                    names = response.getBody().xmlPath().getList("ApiResponse.Data.Name");
+//                    System.out.println("Data = " + names);
+                    Assertions.assertFalse(names.isEmpty(), "No products found in response");
+                    names.forEach(n -> assertTrue(n.toLowerCase().contains(value.toLowerCase()),
+                            n + " does not contain " + value));
+                }
+
+                case "Message" -> {
+                    tagValue = response.getBody().xmlPath().getString("ApiResponse.Message");
+                    Assertions.assertEquals(value, tagValue, "The given value does not match.");
+                }
+                default -> throw new IllegalArgumentException("Unsupported tag: [" + tag + "]");
+            }
+        }
+    }
+//Can also do like below =>
+
+//    @And("the response {string} should be {string}")
+//    public void theResponseShouldBe(String tag, String value) {
+//        boolean isXml = response.getContentType().contains("xml");
+//        String prefix = isXml ? "ApiResponse." : "";
+//
+//        switch (tag) {
+//            case "Success", "Message" -> {
+//                String actual = isXml
+//                        ? response.xmlPath().getString(prefix + tag)
+//                        : response.jsonPath().getString(tag);
+//                Assertions.assertEquals(value, actual, tag + " value does not match.");
+//            }
+//            case "Data" -> {
+//                List<String> names = isXml
+//                        ? response.xmlPath().getList(prefix + "Data.Name", String.class)
+//                        : response.jsonPath().getList("Data.Name", String.class);
+//                Assertions.assertFalse(names.isEmpty(), "No products found in response");
+//                names.forEach(n -> assertTrue(n.toLowerCase().contains(value.toLowerCase()),
+//                        n + " does not contain " + value));
+//            }
+//            default -> throw new IllegalArgumentException("Unsupported tag: [" + tag + "]");
+//        }
+//    }
+
+    @And("the query parameter {string} is set to {string}")
+    public void theQueryParameterIsSetTo(String queryParam, String queryParamValue) {
+        switch (queryParam){
+            case "keyword" -> request.queryParams(Map.of("keyword", queryParamValue));
+            case "minPrice" -> request.queryParams(Map.of("min", queryParamValue));
+            case "maxPrice" -> request.queryParams(Map.of("max", queryParamValue));
+            default -> throw new IllegalStateException("Unexpected value: " + queryParam);
+        }
+    }
 }

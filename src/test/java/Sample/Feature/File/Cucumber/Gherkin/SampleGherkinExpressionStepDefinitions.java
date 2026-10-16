@@ -74,16 +74,15 @@ public class SampleGherkinExpressionStepDefinitions {
     public void user_adds_product(DataTable dataTable) {
         List<Map<String, String>> rows = dataTable.asMaps(String.class, String.class);
         listOfItem.addAll(rows);
-        for (Map<String, String> columns : rows) {
-            String name = columns.get("name");
-            double price = Double.parseDouble(columns.get("price"));
-            int quantity = Integer.parseInt(columns.get("quantity"));
-            boolean inStock = Boolean.parseBoolean(columns.get("inStock"));
+//        for (Map<String, String> columns : rows) {
+//            String name = columns.get("name");
+//            double price = Double.parseDouble(columns.get("price"));
+//            int quantity = Integer.parseInt(columns.get("quantity"));
+//            boolean inStock = Boolean.parseBoolean(columns.get("inStock"));
 //            System.out.println("----".repeat(10));
 //            System.out.println("Name = " + name + " ,quantity = " + quantity + " ,price = " + price
 //            + ",inStock = " + inStock);
-
-        }
+//        }
     }
 
     @Then("display list of data")

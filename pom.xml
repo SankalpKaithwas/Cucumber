@@ -51,7 +51,7 @@
                  <scope>test</scope>
              </dependency>-->
 
-          <!-- Cucumber JUnit Platform Engine (Modern JUnit 5 runner) -->
+        <!-- Cucumber JUnit Platform Engine (Modern JUnit 5 runner) -->
         <dependency>
             <groupId>io.cucumber</groupId>
             <artifactId>cucumber-junit-platform-engine</artifactId>
@@ -79,7 +79,7 @@
               <scope>test</scope>
           </dependency>-->
 
-          <!-- Selenium (version inherited from spring-boot-starter-parent) -->
+        <!-- Selenium (version inherited from spring-boot-starter-parent) -->
         <dependency>
             <groupId>org.seleniumhq.selenium</groupId>
             <artifactId>selenium-java</artifactId>
@@ -93,13 +93,13 @@
             <scope>test</scope>
         </dependency>
 
-        <!-- Or MySQL if your app uses MySQL: -->
-<dependency>
-    <groupId>com.mysql</groupId>
-    <artifactId>mysql-connector-j</artifactId>
-    <version>8.3.0</version>
-    <scope>test</scope>
-</dependency>
+        <!--MySQL : -->
+        <dependency>
+            <groupId>com.mysql</groupId>
+            <artifactId>mysql-connector-j</artifactId>
+            <version>8.3.0</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>

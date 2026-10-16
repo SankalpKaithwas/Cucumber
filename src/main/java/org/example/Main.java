@@ -13,5 +13,26 @@ public class Main {
             // for you, but you can always add more by pressing <shortcut actionId="ToggleLineBreakpoint"/>.
             System.out.println("i = " + i);
         }
+
+        int i = 0;
+        switch (i){
+            case 1: System.out.println("One");
+                break;
+            case 2: System.out.println("Two");
+                break;
+            case 3: System.out.println("Three");
+                break;
+            default:System.out.println("Infinity");
+                break;
+        }
+    i = 2;
+        switch (i){
+            case 1 -> System.out.println("One");
+            case 2-> System.out.println("Two");
+            case 3-> System.out.println("Three");
+            default->System.out.println("Infinity");
+
+        }
+
     }
 }
