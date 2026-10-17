@@ -17,10 +17,7 @@ import org.junit.jupiter.api.Assertions;
 import utils.DatabaseHelper.DatabaseHelper;
 
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -36,6 +33,24 @@ public class ProductStepDefinitions {
     private Integer existingProductId;
     private String originalName;
     private Double originalPrice;
+
+    private static final Map<String, String> FIELD_PATHS = Map.of(
+            "Success", "Success",
+            "Message", "Message",
+            "NumberOfElements", "Data.NumberOfElements"
+            // add new tags here, e.g. "Total", "Data.Id"
+    );
+
+//    private static final Map<String, String> REQUESTTYPE_ENDPOINTS = Map.of(
+//            "GET", "api/products",
+//            "POST", "api/products",
+//            "PATCH","api/products"
+//    );
+
+    private final Map<String, String> queryParams = new HashMap<>();
+
+    private final Map<String, String> productDetails = new HashMap<>();
+
 
     //    // 1. Declare the specification and response fields
 //    private String baseUrl;
@@ -80,7 +95,7 @@ public class ProductStepDefinitions {
                 case "Success" -> response.xmlPath().getString("ApiResponse.Success");
                 case "Message" -> response.xmlPath().getString("ApiResponse.Message");
                 case "Id" -> response.xmlPath().getString("ApiResponse.Data.Id");
-                case "Errors" -> response.xmlPath().getString("ApiResponse.Data.Errors");
+                case "Errors" -> response.xmlPath().getString("ErrorResponse.Errors");
                 case "Name" -> response.xmlPath().getString("ApiResponse.Data.Name");
                 case "Price" -> response.xmlPath().getString("ApiResponse.Data.Price");
                 default -> throw new IllegalArgumentException("Unknown field: " + key);
@@ -150,6 +165,13 @@ public class ProductStepDefinitions {
                 .body(jsonPayload);
     }
 
+    // Attach a XML payload body (for POST / PUT calls)
+    @Given("the xml request payload is:")
+    public void set_Xml_Request_Body(String xmlPayload) {
+        this.request.contentType(ContentType.XML)
+                .body(xmlPayload);
+    }
+
     // 6. Execute GET and store the resulting Response
     @When("the client sends GET request to {string}")
     public void sendGetRequest(String endpoint) {
@@ -161,15 +183,8 @@ public class ProductStepDefinitions {
         this.response.then().log().all();
     }
 
-    // Attach a XML payload body (for POST / PUT calls)
-    @Given("the xml request payload is:")
-    public void set_Xml_Request_Body(String xmlPayload) {
-        this.request.contentType(ContentType.XML)
-                .body(xmlPayload);
-    }
-
     @When("the client sends {string} request to {string}")
-    public void sendPatchRequest(String requestType, String endpoint) {
+    public void the_client_sends_Request(String requestType, String endpoint) {
         if (requestType.equalsIgnoreCase("GET")) {
             this.response = this.request
                     .when()
@@ -184,8 +199,35 @@ public class ProductStepDefinitions {
 
             // Immediately log the response in the console
             this.response.then().log().all();
+
+        } else if (requestType.equalsIgnoreCase("PUT")) {
+            this.response = this.request
+                    .when()
+                    .put(endpoint);
+            // Immediately log the response in the console
+            this.response.then().log().all();
         }
     }
+
+//    public void sendRequest(String requestType, String endpoint) {
+//
+//        if (requestType.equalsIgnoreCase("GET")) {
+//            this.response = this.request
+//                    .when()
+//                    .get(endpoint);
+//
+//            // Immediately log the response in the console
+//            this.response.then().log().all();
+//        } else if (requestType.equalsIgnoreCase("PATCH")) {
+//            this.response = this.request
+//                    .when()
+//                    .patch(endpoint);
+//
+//            // Immediately log the response in the console
+//            this.response.then().log().all();
+//        }
+//    }
+
 
     // 7. Execute POST and store the resulting Response
     @When("the client sends POST request to {string}")
@@ -264,7 +306,7 @@ public class ProductStepDefinitions {
 
     @Then("the client sends DELETE request to {string}")
     public void the_Client_Sends_DELETE_Request_To(String endPoint) {
-        this.response = request
+        this.response = this.request
                 .when()
                 .delete(endPoint);
         this.response.then().log().all();
@@ -294,9 +336,21 @@ public class ProductStepDefinitions {
         originalPrice = dbHelper.getProductPriceById(id);
         Assertions.assertNotNull(originalName, "Product " + id
                 + "does not exist. This Scneario needs it to be there.");
-
     }
 
+    @Given("Get existing product details using id {int}")
+    public void get_Existing_Product_Details_Using_Id(int id) {
+        response = this.request.when().get("api/products/" + id);
+        if(response.getBody()!= null) {
+            int productId = response.getBody().jsonPath().get("Data.Id");
+            String productName = response.getBody().jsonPath().get("Data.Name");
+            double productprice = response.getBody().jsonPath().get("Data.Price");
+            productDetails.put("id", String.valueOf(productId));
+            productDetails.put("name", productName);
+            productDetails.put("price", String.valueOf(productprice));
+        }
+        System.out.println(productDetails);
+    }
 
     // Put the original values back through the PATCH endpoint, like the other cleanup
     @After("@restoreProduct")
@@ -324,7 +378,7 @@ public class ProductStepDefinitions {
             Assertions.assertEquals(value, dbHelper.getProductNameById(existingProductId),
                     "Product name - " + name + " matches the updated value with - " + value);
         } else if (name.equalsIgnoreCase("price")) {
-            Assertions.assertEquals(Integer.parseInt(value), dbHelper.getProductPriceById(existingProductId),
+            Assertions.assertEquals(Double.parseDouble(value), dbHelper.getProductPriceById(existingProductId),
                     "Product name - " + name + " matches the updated value with - " + value);
         }
     }
@@ -336,51 +390,53 @@ public class ProductStepDefinitions {
         }
     }
 
-    @And("the response {string} should be {string}")
-    public void theResponseShouldBe(String tag, String value) {
-        String tagValue = "";
-        List<String> names = new ArrayList<>();
-        if (response.getContentType().contains("json")) {
-            switch (tag) {
-                case "Success" -> {
-                    tagValue = response.getBody().jsonPath().getString("Success");
-                    Assertions.assertEquals(value, tagValue, "The given value does not match.");
-                }
-                case "Data" -> {
-                    names = response.getBody().jsonPath().getList("Data.Name");
-//                    System.out.println("Data = " + names);
-                    Assertions.assertFalse(names.isEmpty(), "No products found in response");
-                    names.forEach(n -> assertTrue(n.toLowerCase().contains(value.toLowerCase()),
-                            n + " does not contain " + value));
-                }
-                case "Message" -> {
-                    tagValue = response.getBody().jsonPath().getString("Message");
-                    Assertions.assertEquals(value, tagValue, "The given value does not match.");
-                }
-                default -> throw new IllegalArgumentException("Unsupported tag: [" + tag + "]");
-            }
-        } else if (response.getContentType().contains("xml")) {
-            switch (tag) {
-                case "Success" -> {
-                    tagValue = response.getBody().xmlPath().getString("ApiResponse.Success");
-                    Assertions.assertEquals(value, tagValue, "The given value does not match.");
-                }
-                case "Data" -> {
-                    names = response.getBody().xmlPath().getList("ApiResponse.Data.Name");
-//                    System.out.println("Data = " + names);
-                    Assertions.assertFalse(names.isEmpty(), "No products found in response");
-                    names.forEach(n -> assertTrue(n.toLowerCase().contains(value.toLowerCase()),
-                            n + " does not contain " + value));
-                }
+//    @And("the response {string} should be {string}")
+//    public void theResponseShouldBe(String tag, String value) {
+//        String tagValue = "";
+//        List<String> names = new ArrayList<>();
+//        if (response.getContentType().contains("json")) {
+//            switch (tag) {
+//                case "Success" -> {
+//                    tagValue = response.getBody().jsonPath().getString("Success");
+//                    Assertions.assertEquals(value, tagValue, "The given value does not match.");
+//                }
+//                case "Data" -> {
+//                    names = response.getBody().jsonPath().getList("Data.Name");
+////                    System.out.println("Data = " + names);
+//                    Assertions.assertFalse(names.isEmpty(), "No products found in response");
+//                    names.forEach(n -> assertTrue(n.toLowerCase().contains(value.toLowerCase()),
+//                            n + " does not contain " + value));
+//                }
+//                case "Message" -> {
+//                    tagValue = response.getBody().jsonPath().getString("Message");
+//                    Assertions.assertEquals(value, tagValue, "The given value does not match.");
+//                }
+//                default -> throw new IllegalArgumentException("Unsupported tag: [" + tag + "]");
+//            }
+//        } else if (response.getContentType().contains("xml")) {
+//            switch (tag) {
+//                case "Success" -> {
+//                    tagValue = response.getBody().xmlPath().getString("ApiResponse.Success");
+//                    Assertions.assertEquals(value, tagValue, "The given value does not match.");
+//                }
+//                case "Data" -> {
+//                    names = response.getBody().xmlPath().getList("ApiResponse.Data.Name");
 
-                case "Message" -> {
-                    tagValue = response.getBody().xmlPath().getString("ApiResponse.Message");
-                    Assertions.assertEquals(value, tagValue, "The given value does not match.");
-                }
-                default -> throw new IllegalArgumentException("Unsupported tag: [" + tag + "]");
-            }
-        }
-    }
+    /// /                    System.out.println("Data = " + names);
+//                    Assertions.assertFalse(names.isEmpty(), "No products found in response");
+//                    names.forEach(n -> assertTrue(n.toLowerCase().contains(value.toLowerCase()),
+//                            n + " does not contain " + value));
+//                }
+//
+//                case "Message" -> {
+//                    tagValue = response.getBody().xmlPath().getString("ApiResponse.Message");
+//                    Assertions.assertEquals(value, tagValue, "The given value does not match.");
+//                }
+//                default -> throw new IllegalArgumentException("Unsupported tag: [" + tag + "]");
+//            }
+//        }
+//    }
+
 //Can also do like below =>
 
 //    @And("the response {string} should be {string}")
@@ -407,13 +463,54 @@ public class ProductStepDefinitions {
 //        }
 //    }
 
+    // OR BETTER -
+    private String extract(String path) {
+        return isXml()
+                ? response.xmlPath().getString("ApiResponse." + path)
+                : response.jsonPath().getString(path);
+    }
+
+    private boolean isXml() {
+        return response.getContentType().contains("xml");
+    }
+
+    @And("the response {string} should be {string}")
+    public void theResponseShouldBe(String tag, String value) {
+        String path = FIELD_PATHS.get(tag);
+        if (path == null) {
+            throw new IllegalArgumentException("Unsupported tag: [" + tag + "]");
+        }
+        boolean isPaginated = queryParams.containsKey("page") || queryParams.containsKey("size");
+        if (isPaginated) {
+//            Assertions.assertEquals(value, extract("Data.NumberOfElements"), tag + " value does not match.");
+            Assertions.assertEquals(value, extract(path), tag + " value does not match.");
+        } else {
+            Assertions.assertEquals(value, extract(path), tag + " value does not match.");
+        }
+    }
+
     @And("the query parameter {string} is set to {string}")
     public void theQueryParameterIsSetTo(String queryParam, String queryParamValue) {
-        switch (queryParam){
-            case "keyword" -> request.queryParams(Map.of("keyword", queryParamValue));
-            case "minPrice" -> request.queryParams(Map.of("min", queryParamValue));
-            case "maxPrice" -> request.queryParams(Map.of("max", queryParamValue));
+        switch (queryParam) {
+            case "keyword" -> request.queryParams("keyword", queryParamValue);
+            case "minimumPrice" -> request.queryParams("min", queryParamValue);
+            case "maximumPrice" -> request.queryParams("max", queryParamValue);
+            case "maxPrice" -> request.queryParams("maxPrice", queryParamValue);
+            case "page" -> request.queryParams("page", queryParamValue);
+            case "size" -> request.queryParams("size", queryParamValue);
             default -> throw new IllegalStateException("Unexpected value: " + queryParam);
         }
+        queryParams.put(queryParam, queryParamValue);
+    }
+
+
+    @And("every product name in the response Data should contain {string}")
+    public void everyProductNameInTheResponseDataShouldContain(String productName) {
+        List<String> names = isXml()
+                ? response.body().xmlPath().getList("ApiResponse.Data.Name")
+                : response.body().jsonPath().getList("Data.Name");
+        Assertions.assertFalse(names.isEmpty(), "No products found in response");
+        names.forEach(n -> assertTrue(n.toLowerCase().contains(productName.toLowerCase()),
+                n + " does not contain " + productName));
     }
 }
