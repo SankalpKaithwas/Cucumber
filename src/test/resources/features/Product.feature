@@ -220,7 +220,7 @@ Feature: Product Feature
 
   Scenario Outline: Get an existing products detail by Products_name - JSON response
     Given the request header "Accept" is set to "application/json"
-    And the query parameter "keyword" is set to "Monitor"
+    And the query parameter "productName" is set to "Monitor"
     When the client sends "GET" request to "api/products/search"
     Then the response status code should be 200
     And the response "Success" should be "<Success>"
@@ -231,7 +231,7 @@ Feature: Product Feature
 
   Scenario Outline: Get an existing products detail by Products_name - XML response
     Given the request header "Accept" is set to "application/xml"
-    And the query parameter "keyword" is set to "Adjustable Aluminum Laptop Stand"
+    And the query parameter "productName" is set to "Adjustable Aluminum Laptop Stand"
     When the client sends "GET" request to "api/products/search"
     Then the response status code should be 200
     And the response "Success" should be "<Success>"
@@ -312,7 +312,7 @@ Feature: Product Feature
 
   Scenario Outline: Getting a non existing products detail by Products_name throws validation JSON
     Given the request header "Accept" is set to "application/json"
-    And the query parameter "keyword" is set to "adas"
+    And the query parameter "productName" is set to "adas"
     When the client sends "GET" request to "api/products/search"
     Then the response status code should be 200
     And the response "Success" should be "<Success>"
@@ -337,8 +337,7 @@ Feature: Product Feature
       | Errors     | A product with name 'Desk Mat' already exists. |
 
 
-  Scenario: Adding a product that already exists give valition A product
-  with name 'PRODUCT_NAME' already exists - XML
+  Scenario: Adding a product that already exists give valition A product with name 'PRODUCT_NAME' already exists - XML
     Given the Json request payload is:
                         """
                         {
@@ -405,3 +404,45 @@ Feature: Product Feature
     Examples:
       | ID | Success | Message              |
       | 96 | true    | Updated Successfully |
+
+
+    #########################################################
+  Scenario: Simple Add Product Request and returning xml response
+    Given the request header "Content-Type" is set to "application/xml"
+    Given the request header "Accept" is set to "application/xml"
+    Given the xml request payload is:
+    """
+      <Product>
+        <name>Shoe Rack</name>
+        <price>16.99</price>
+      </Product>
+    """
+    When the client sends POST request to "/api/products"
+    Then the response status code should be 201
+
+  Scenario Outline: Updating an existing product detail using PUT - XML request TESTESTSTS
+    Given the request header "Content-Type" is set to "application/xml"
+    Given the request header "Accept" is set to "application/xml"
+    Given the path parameter "id" is set to "<ID>"
+    Given the xml request payload is:
+                          """
+                          <Product>
+                          <name>Extension</name>
+                          <Price>3.99</Price>
+                          </Product>
+                          """
+    When the client sends "PUT" request to "api/products/{id}"
+    Examples:
+      | ID |
+      | 100 |
+
+  Scenario: PATCH an existing product's name and price with new values using xml request TESTSTSS.
+#    Given the request header "Accept" is set to "application/xml"
+    And the path parameter "id" is set to "100"
+    Given the xml request payload is:
+                """
+                  <Product>
+                  </Product>
+                """
+    When the client sends "PATCH" request to "api/products/{id}"
+    Then the response status code should be 200

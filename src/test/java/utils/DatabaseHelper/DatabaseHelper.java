@@ -14,7 +14,7 @@ public class DatabaseHelper {
     }
 
     // Method to query the newly created product ID by name
-    public Integer getLatestProductIdByName(String productName) throws SQLException {
+    public Integer getLatestProductIdByName(String productName) {
         String query = "SELECT id FROM products WHERE name = ? ORDER BY id DESC LIMIT 1";
 
         try (Connection conn = getConnection(); PreparedStatement stmt = conn.prepareStatement(query)) {

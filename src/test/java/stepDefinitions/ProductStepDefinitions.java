@@ -2,7 +2,6 @@ package stepDefinitions;
 
 import io.cucumber.datatable.DataTable;
 import io.cucumber.java.After;
-import io.cucumber.java.PendingException;
 import io.cucumber.java.en.And;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
@@ -16,8 +15,10 @@ import org.apache.commons.logging.LogFactory;
 import org.junit.jupiter.api.Assertions;
 import utils.DatabaseHelper.DatabaseHelper;
 
-import java.sql.SQLException;
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -135,11 +136,11 @@ public class ProductStepDefinitions {
 
     // 2. Initialize with base configuration
     @Given("the product API is available at {string}")
-    public void setupBaseRequest(String baseUrl) {
+    public String setupBaseRequest(String baseUrl) {
         this.request = RestAssured.given()
                 .baseUri(baseUrl)
                 .log().all(); // Logs the outgoing request details(Logs request headers, method, URL, and body to the console)
-        this.baseUrlUpdated = baseUrl;
+        return this.baseUrlUpdated = baseUrl;
     }
 
     // {string} automatically matches text inside double quotes ("...") or single quotes ('...')
@@ -240,12 +241,13 @@ public class ProductStepDefinitions {
     }
 
     @When("the client sends GET request to {string} for {int}")
-    public void send_Get_Request_With_Id(String endpoint, int productId) {
+    public Response send_Get_Request_With_Id(String endpoint, int productId) {
         this.response = this.request
                 .when()
                 .get(endpoint + productId);
 
         this.response.then().log().all();
+        return response;
     }
 
     @And("the path parameter {string} is set to {string}")
@@ -265,10 +267,10 @@ public class ProductStepDefinitions {
 
     @And("the returned product id should match the database record for product {string}")
     public void the_Returned_Product_Id_Should_Match_The_Database_Record_For_Product(
-            String productName) throws SQLException {
+            String productName) {
         // 1. Fetch the corresponding ID directly from MySQL via plain JDBC
         Integer dbId = dbHelper.getLatestProductIdByName(productName);
-        System.out.println("Product Id- " + dbId);
+        log.info("Product Id- " + dbId);
         // 2. Verify they match
         Assertions.assertNotNull(dbId, "No matching record found in MySQL for product: " + productName);
         Assertions.assertEquals(dbId, createdProductId, "API response ID does not match MySQL database ID!");
@@ -283,13 +285,14 @@ public class ProductStepDefinitions {
         } else {
             createdProductId = response.jsonPath().getInt("Data.Id");
         }
-        System.out.println("createdProductId - " + createdProductId);
+        log.info("CreatedProductId - " + createdProductId);
     }
 
     @Then("the response status code should be {int}")
-    public void the_Response_Status_Code_Should_Be(int expectedStatusCode) {
+    public int the_Response_Status_Code_Should_Be(int expectedStatusCode) {
         int statusCode = response.getStatusCode();
         Assertions.assertEquals(expectedStatusCode, statusCode, "Unexpected HTTP status code");
+        return statusCode;
     }
 
     @Then("the response Message should be {string}")
@@ -349,7 +352,7 @@ public class ProductStepDefinitions {
             productDetails.put("name", productName);
             productDetails.put("price", String.valueOf(productprice));
         }
-        System.out.println(productDetails);
+        log.info("ProductDetails " + productDetails);
     }
 
     // Put the original values back through the PATCH endpoint, like the other cleanup
@@ -492,7 +495,7 @@ public class ProductStepDefinitions {
     @And("the query parameter {string} is set to {string}")
     public void theQueryParameterIsSetTo(String queryParam, String queryParamValue) {
         switch (queryParam) {
-            case "keyword" -> request.queryParams("keyword", queryParamValue);
+            case "productName" -> request.queryParams("productName", queryParamValue);
             case "minimumPrice" -> request.queryParams("min", queryParamValue);
             case "maximumPrice" -> request.queryParams("max", queryParamValue);
             case "maxPrice" -> request.queryParams("maxPrice", queryParamValue);
