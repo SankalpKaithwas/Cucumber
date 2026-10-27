@@ -1,5 +1,6 @@
 package utils.DatabaseHelper;
 
+import java.math.BigDecimal;
 import java.sql.*;
 
 public class DatabaseHelper {
@@ -64,14 +65,14 @@ public class DatabaseHelper {
     }
 
     // Returns null if the product does not exist
-    public Double getProductPriceById(int id) {
+    public BigDecimal getProductPriceById(int id) {
         String sql = "SELECT price FROM products WHERE id = ?";
 
         try (Connection conn = getConnection(); PreparedStatement stmt = conn.prepareStatement(sql)) {
 
             stmt.setInt(1, id);
             try (ResultSet rs = stmt.executeQuery()) {
-                return rs.next() ? rs.getDouble("price") : null;
+                return rs.next() ? rs.getBigDecimal("price") : null;
             }
         } catch (SQLException e) {
             throw new RuntimeException("Database query failed while fetching price for id: " + id, e);

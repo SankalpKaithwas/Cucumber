@@ -1,3 +1,4 @@
+@regression
 Feature: Product Feature
 
   // Background runs before each Scenario
@@ -26,7 +27,7 @@ Feature: Product Feature
       | Message | Products fetched successfully |
       | Id      | 3                             |
       | Name    | Mechanical Keyboard           |
-      | Price   | 110.0                         |
+      | Price   | 110.00                        |
     Examples:
       | id |  | endpoint       |
       | 3  |  | /api/products/ |
@@ -51,37 +52,38 @@ Feature: Product Feature
     Given the xml request payload is:
     """
       <Product>
-        <name>Oneplus 2</name>
-        <price>699.99</price>
+        <name>Pillows</name>
+        <price>69.99</price>
       </Product>
     """
     When the client sends POST request to "/api/products"
+    And the product id is saved from the response
     Then the response status code should be 201
-    And the returned product id should match the database record for product "Oneplus 2"
+    And the returned product id should match the database record for product "Pillows"
     And the response XML should have:
       | Success | true                         |
       | Message | Product Created Successfully |
-      | Name    | Oneplus 2                    |
-      | Price   | 699.99                       |
+      | Name    | Pillows                      |
+      | Price   | 69.99                        |
 
   Scenario: Add Product Request and response returning JSON
     Given the request header "Content-Type" is set to "application/json"
     Given the Json request payload is:
                                 """
                                   {
-                                    "name": "Product2",
-                                    "price": 2.50
+                                    "name": "Product6",
+                                    "price": 22.50
                                   }
                                   """
     When the client sends POST request to "/api/products"
     And the product id is saved from the response
     Then the response status code should be 201
-    And the returned product id should match the database record for product "Product2"
+    And the returned product id should match the database record for product "Product6"
     And the response JSON should have:
       | Success | true                         |
       | Message | Product Created Successfully |
-      | Name    | Product2                       |
-      | Price   | 2.5                          |
+      | Name    | Product6                     |
+      | Price   | 22.5                         |
 
 
   Scenario: Delete a product using Xml DELETE request after Post Request.(Full Workflow)
@@ -89,7 +91,7 @@ Feature: Product Feature
     Given the xml request payload is:
                 """
                   <Product>
-                    <name>Oneplus 2</name>
+                    <name>Delete</name>
                     <price>639.99</price>
                   </Product>
                 """
@@ -119,7 +121,7 @@ Feature: Product Feature
     Given the Json request payload is:
                 """
                   {
-                    "name":"Oneplus 5",
+                    "name":"Deleted",
                     "price":639.99
                   }
                 """
@@ -168,7 +170,7 @@ Feature: Product Feature
     When the client sends "PATCH" request to "api/products/{id}"
     Then the response status code should be 200
     And the product "name" in the database should be "XMLPatched"
-    And the product "price" in the database should be "12"
+    And the product "price" in the database should be "12.00"
 #    And the product "price" in the database should be unchanged
 
   @restoreProduct
@@ -190,7 +192,7 @@ Feature: Product Feature
   Scenario Outline: Get all products detail within min and max price limit
     Given the request header "Accept" is set to "application/json"
     And the query parameter "minimumPrice" is set to "<minimumPrice>"
-    And the query parameter "maxPrice" is set to "<maximumPrice>"
+    And the query parameter "maximumPrice" is set to "<maximumPrice>"
     When the client sends "GET" request to "api/products/range"
     Then the response status code should be 200
     Examples:
@@ -212,10 +214,10 @@ Feature: Product Feature
     And the query parameter "size" is set to "<Size>"
     When the client sends "GET" request to "api/products/paged"
     Then the response status code should be 200
-    Then the response "NumberOfElements" should be "<NumberOfElements>"
+    Then the response "Size" should be "<Size>"
     Then the response "Message" should be "<Message>"
     Examples:
-      | Page | Size | NumberOfElements | Message|
+      | Page | Size | Size | Message|
       | 0    | 9    | 9                |Operation successful|
 
   Scenario Outline: Get an existing products detail by Products_name - JSON response
@@ -303,7 +305,7 @@ Feature: Product Feature
   Scenario: Validation Delete a product which doesnt exist - XML
     Given the request header "Accept" is set to "application/xml"
     Given the path parameter "id" is set to "771231"
-    When the client sends "DELETE" request to "api/products/{id}"
+    When the client sends DELETE request to "api/products/{id}"
     Then the response status code should be 404
     And the response XML should have:
       | Message | Not Found                                        |
@@ -405,9 +407,69 @@ Feature: Product Feature
       | ID | Success | Message              |
       | 96 | true    | Updated Successfully |
 
+  Scenario Outline: Validation when min price is greater than max price limit
+    Given the request header "Accept" is set to "application/json"
+    And the query parameter "minimumPrice" is set to "<minimumPrice>"
+    And the query parameter "maximumPrice" is set to "<maximumPrice>"
+    When the client sends "GET" request to "api/products/range"
+    Examples:
+      | minimumPrice | maximumPrice |Message     | Errors                                   |
+      | 150          | 90          | Bad Request | Min price must not be greater than Max price |
+
+  Scenario Outline: Validation when max price is not present when finding product within min and max price limit
+    Given the request header "Accept" is set to "application/json"
+    And the query parameter "minimumPrice" is set to "<minimumPrice>"
+    When the client sends "GET" request to "api/products/range"
+    Then the response status code should be <StatusCode>
+    And the response "Message" should be "<Message>"
+    And the response Errors should be "<Errors>"
+    Examples:
+      | minimumPrice | StatusCode | Message     | Errors                                   |
+      | 150          | 400        | Bad Request | Required parameter 'max' is not present. |
+
+  Scenario Outline: Validation Invalid - String ID
+    Given the request header "Accept" is set to "application/json"
+    And the query parameter "minimumPrice" is set to "<minimumPrice>"
+    When the client sends "GET" request to "api/products/dsadsa"
+    Then the response status code should be <StatusCode>
+    And the response "Message" should be "<Message>"
+    And the response Errors should be "<Errors>"
+    Examples:
+      | minimumPrice | StatusCode | Message     | Errors                                      |
+      | 150          | 400        | Bad Request | Failed to convert 'id' with value: 'dsadsa' |
+
+  Scenario Outline: Validation Invalid - Sort property foo
+    Given the request header "Accept" is set to "application/json"
+    When the client sends "GET" request to "api/products/paged?sort=foo"
+    Then the response status code should be <StatusCode>
+    And the response "Message" should be "<Message>"
+    And the response Errors should be "<Errors>"
+    Examples:
+      | StatusCode | Message     | Errors                     |
+      | 400        | Bad Request | Invalid Sort property: foo |
+
+  Scenario Outline: Validation Invalid URI gives message Resource Not Found
+    Given the request header "Accept" is set to "application/json"
+    When the client sends "GET" request to "api/products/paged/sort"
+    Then the response status code should be <StatusCode>
+    And the response "Message" should be "<Message>"
+    And the response Errors should be "<Errors>"
+    Examples:
+      | StatusCode | Message            | Errors                                      |
+      | 404        | Resource Not Found | No static resource api/products/paged/sort. |
+
+  Scenario Outline: Validation when No controller or static file matches the URL, such as GET /api/nothing
+    Given the request header "Accept" is set to "application/json"
+    When the client sends "GET" request to "api/anything"
+    Then the response status code should be <StatusCode>
+    And the response "Message" should be "<Message>"
+    And the response Errors should be "<Errors>"
+    Examples:
+      | StatusCode | Message            | Errors                                      |
+      | 404        | Resource Not Found | No static resource api/anything. |
 
     #########################################################
-  Scenario: Simple Add Product Request and returning xml response
+  Scenario: Simple XML Add Product Request and response
     Given the request header "Content-Type" is set to "application/xml"
     Given the request header "Accept" is set to "application/xml"
     Given the xml request payload is:
@@ -446,3 +508,4 @@ Feature: Product Feature
                 """
     When the client sends "PATCH" request to "api/products/{id}"
     Then the response status code should be 200
+

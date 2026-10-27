@@ -15,6 +15,7 @@ import org.apache.commons.logging.LogFactory;
 import org.junit.jupiter.api.Assertions;
 import utils.DatabaseHelper.DatabaseHelper;
 
+import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -33,12 +34,12 @@ public class ProductStepDefinitions {
     private String baseUrlUpdated;
     private Integer existingProductId;
     private String originalName;
-    private Double originalPrice;
+    private BigDecimal originalPrice;
 
     private static final Map<String, String> FIELD_PATHS = Map.of(
             "Success", "Success",
             "Message", "Message",
-            "NumberOfElements", "Data.NumberOfElements"
+            "Size", "Data.page.Size"
             // add new tags here, e.g. "Total", "Data.Id"
     );
 
@@ -381,7 +382,7 @@ public class ProductStepDefinitions {
             Assertions.assertEquals(value, dbHelper.getProductNameById(existingProductId),
                     "Product name - " + name + " matches the updated value with - " + value);
         } else if (name.equalsIgnoreCase("price")) {
-            Assertions.assertEquals(Double.parseDouble(value), dbHelper.getProductPriceById(existingProductId),
+            Assertions.assertEquals(new BigDecimal(value), dbHelper.getProductPriceById(existingProductId),
                     "Product name - " + name + " matches the updated value with - " + value);
         }
     }
@@ -389,7 +390,7 @@ public class ProductStepDefinitions {
     @Then("the product {string} in the database should be unchanged")
     public void the_Product_Price_Should_Be_Unchanged(String product_check) {
         if (Objects.equals(product_check, "price")) {
-            Assertions.assertEquals(originalPrice, dbHelper.getProductPriceById(existingProductId), 0.001);
+            Assertions.assertEquals(originalPrice, dbHelper.getProductPriceById(existingProductId));
         }
     }
 
