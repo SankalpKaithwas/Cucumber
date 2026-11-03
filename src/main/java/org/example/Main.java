@@ -1,5 +1,7 @@
 package org.example;
 
+import java.util.UUID;
+
 //TIP To <b>Run</b> code, press <shortcut actionId="Run"/> or
 // click the <icon src="AllIcons.Actions.Execute"/> icon in the gutter.
 public class Main {
@@ -13,6 +15,8 @@ public class Main {
             // for you, but you can always add more by pressing <shortcut actionId="ToggleLineBreakpoint"/>.
             System.out.println("i = " + i);
         }
+        System.out.println(UUID.randomUUID().toString().substring(0, 8));
+
 
         int i = 0;
         switch (i){

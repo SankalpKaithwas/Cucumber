@@ -1,4 +1,4 @@
-package stepDefinitions;
+package old.step.definitions;
 
 import io.cucumber.datatable.DataTable;
 import io.cucumber.java.After;
@@ -29,7 +29,7 @@ public class ProductStepDefinitions {
     private final DatabaseHelper dbHelper = new DatabaseHelper();
 
     // Id of a product seeded straight into MySQL by the scenario (null if none)
-    private Integer createdProductId;
+    private Long createdProductId;
 
     private String baseUrlUpdated;
     private Integer existingProductId;
@@ -52,6 +52,7 @@ public class ProductStepDefinitions {
     private final Map<String, String> queryParams = new HashMap<>();
 
     private final Map<String, String> productDetails = new HashMap<>();
+
 
 
     //    // 1. Declare the specification and response fields
@@ -110,7 +111,7 @@ public class ProductStepDefinitions {
     public void verifyJSONContent(DataTable dataTable) {
         Map<String, String> expectedValues = dataTable.asMap(String.class, String.class);
 
-        // Validating XML nodes directly via XML path
+        // Validating json nodes directly via json path
         expectedValues.forEach((key, expectedVal) -> {
             String actualVal = switch (key) {
                 case "StatusCode" -> response.jsonPath().getString("StatusCode");
@@ -278,16 +279,16 @@ public class ProductStepDefinitions {
     }
 
 
-    @Then("the product id is saved from the response")
-    public void the_ProductId_Is_Saved_From_The_Response() {
-        String contentType = response.contentType();
-        if (contentType != null && contentType.contains("xml")) {
-            createdProductId = response.getBody().xmlPath().getInt("ApiResponse.Data.Id");
-        } else {
-            createdProductId = response.jsonPath().getInt("Data.Id");
-        }
-        log.info("CreatedProductId - " + createdProductId);
-    }
+//    @Then("the product id is saved from the response")
+//    public void the_ProductId_Is_Saved_From_The_Response() {
+//        String contentType = response.contentType();
+//        if (contentType != null && contentType.contains("xml")) {
+//            createdProductId = response.getBody().xmlPath().getLong("ApiResponse.Data.Id");
+//        } else {
+//            createdProductId = response.jsonPath().getLong("Data.Id");
+//        }
+//        log.info("CreatedProductId - " + createdProductId);
+//    }
 
     @Then("the response status code should be {int}")
     public int the_Response_Status_Code_Should_Be(int expectedStatusCode) {

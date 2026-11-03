@@ -1,7 +1,8 @@
 @regression
 Feature: Product Feature
+  Requires ProductStepDefinition.java
 
-  // Background runs before each Scenario
+# Background runs before each Scenario
   Background:
     Given the product API is available at "http://localhost:8080"
 

@@ -1,21 +1,26 @@
 package utils.DatabaseHelper;
 
+import com.google.protobuf.Empty;
+import com.mysql.cj.exceptions.AssertionFailedException;
+import models.Product;
+import utils.config.ConfigFileReader;
+
 import java.math.BigDecimal;
 import java.sql.*;
 
+
 public class DatabaseHelper {
 
-    private static final String DB_URL = "jdbc:mysql://localhost:3306/product_db"
-            + "?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC";
-    private static final String DB_USER = "root";
-    private static final String DB_PASSWORD = "root";
+    private static final String DB_URL = ConfigFileReader.get("db.url");
+    private static final String DB_USER = ConfigFileReader.get("db.user");
+    private static final String DB_PASSWORD = ConfigFileReader.get("db.password");
 
     private Connection getConnection() throws SQLException {
         return DriverManager.getConnection(DB_URL, DB_USER, DB_PASSWORD);
     }
 
     // Method to query the newly created product ID by name
-    public Integer getLatestProductIdByName(String productName) {
+    public Long getLatestIdByProductName(String productName) {
         String query = "SELECT id FROM products WHERE name = ? ORDER BY id DESC LIMIT 1";
 
         try (Connection conn = getConnection(); PreparedStatement stmt = conn.prepareStatement(query)) {
@@ -24,7 +29,7 @@ public class DatabaseHelper {
 
             try (ResultSet rs = stmt.executeQuery()) {
                 if (rs.next()) {
-                    return rs.getInt("id");
+                    return rs.getLong("id");
                 }
             }
         } catch (SQLException e) {
@@ -35,12 +40,12 @@ public class DatabaseHelper {
     }
 
     // True if a row with this id is still in the products table
-    public boolean productExists(int id) {
+    public boolean isProductExists(Long id) {
         String sql = "SELECT 1 FROM products WHERE id = ?";
 
         try (Connection conn = getConnection(); PreparedStatement stmt = conn.prepareStatement(sql)) {
 
-            stmt.setInt(1, id);
+            stmt.setLong(1, id);
             try (ResultSet rs = stmt.executeQuery()) {
                 return rs.next();
             }
@@ -50,12 +55,12 @@ public class DatabaseHelper {
     }
 
     // Returns null if the product does not exist
-    public String getProductNameById(int id) {
+    public String getProductNameById(long id) {
         String sql = "SELECT name FROM products WHERE id = ?";
 
         try (Connection conn = getConnection(); PreparedStatement stmt = conn.prepareStatement(sql)) {
 
-            stmt.setInt(1, id);
+            stmt.setLong(1, id);
             try (ResultSet rs = stmt.executeQuery()) {
                 return rs.next() ? rs.getString("name") : null;
             }
@@ -65,12 +70,12 @@ public class DatabaseHelper {
     }
 
     // Returns null if the product does not exist
-    public BigDecimal getProductPriceById(int id) {
+    public BigDecimal getProductPriceById(long id) {
         String sql = "SELECT price FROM products WHERE id = ?";
 
         try (Connection conn = getConnection(); PreparedStatement stmt = conn.prepareStatement(sql)) {
 
-            stmt.setInt(1, id);
+            stmt.setLong(1, id);
             try (ResultSet rs = stmt.executeQuery()) {
                 return rs.next() ? rs.getBigDecimal("price") : null;
             }
@@ -78,4 +83,40 @@ public class DatabaseHelper {
             throw new RuntimeException("Database query failed while fetching price for id: " + id, e);
         }
     }
+
+
+    public Product getProductById(long id) {
+        String sql = "SELECT NAME, PRICE FROM products WHERE id = ?";
+        String name;
+        BigDecimal price;
+        try (Connection conn = getConnection(); PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setLong(1, id);
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    name = rs.getString("name");
+                    price = new BigDecimal(String.valueOf(rs.getBigDecimal("price")));
+
+                    Product product = new Product(name, price);
+                    product.setId(id);
+                    return product;
+                } else throw new AssertionError("No row with id " + id + " in the database");
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Database query failed while fetching name for id: " + id, e);
+        }
+    }
+
+    public void deleteProductById(long id) {
+        try (Connection connection = getConnection();
+           PreparedStatement preparedStatement =
+                   connection.prepareStatement("DELETE FROM PRODUCTS WHERE ID = ?");) {
+            preparedStatement.setLong(1, id);
+            preparedStatement.executeUpdate();
+    /* executeUpdate() is the one for DELETE, INSERT and UPDATE. executeQuery() is only for SELECT */
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
 }
