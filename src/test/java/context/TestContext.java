@@ -35,12 +35,9 @@ public class TestContext {
     private final List<Long> createdIds = new ArrayList<>();
 
     private Long createdProductId;
-    private Long existingProductId;
-    private String originalName;
-    private BigDecimal originalPrice;
+
     private final Map<String, String> queryParams = new HashMap<>();
 
-    private final Map<String, String> productDetails = new HashMap<>();
     private RequestSpecification request;
 
     public RequestSpecification getRequest() {
@@ -87,30 +84,6 @@ public class TestContext {
         this.response = response;
     }
 
-    public long getProductId() {
-        return productId;
-    }
-
-    public void setProductId(long productId) {
-        this.productId = productId;
-    }
-
-    public String getOriginalName() {
-        return originalName;
-    }
-
-    public void setOriginalName(String originalName) {
-        this.originalName = originalName;
-    }
-
-    public BigDecimal getOriginalPrice() {
-        return originalPrice;
-    }
-
-    public void setOriginalPrice(BigDecimal originalPrice) {
-        this.originalPrice = originalPrice;
-    }
-
     public Long getCreatedProductId() {
         return createdProductId;
     }
@@ -119,13 +92,11 @@ public class TestContext {
         this.createdProductId = createdProductId;
     }
 
-    public Long getExistingProductId() {
-        return existingProductId;
+
+    public Map<String, String> getQueryParams(){
+        return queryParams;
     }
 
-    public void setExistingProductId(Long existingProductId) {
-        this.existingProductId = existingProductId;
-    }
 
     /**
      * Remember an id so the @After hook can delete the test data again.
@@ -157,11 +128,9 @@ public class TestContext {
         createdIds.clear();
         response = null;
         createdProductId = null;
-        existingProductId = null;
-        originalName = "";
-        originalPrice = BigDecimal.ZERO;
-        productDetails.clear();
         queryParams.clear();
 
     }
+
+    
 }

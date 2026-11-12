@@ -1,12 +1,11 @@
 package utils.DatabaseHelper;
 
-import com.google.protobuf.Empty;
-import com.mysql.cj.exceptions.AssertionFailedException;
 import models.Product;
 import utils.config.ConfigFileReader;
 
 import java.math.BigDecimal;
 import java.sql.*;
+import java.util.Optional;
 
 
 public class DatabaseHelper {
@@ -89,18 +88,20 @@ public class DatabaseHelper {
         String sql = "SELECT NAME, PRICE FROM products WHERE id = ?";
         String name;
         BigDecimal price;
+        Product product = new Product();
         try (Connection conn = getConnection(); PreparedStatement stmt = conn.prepareStatement(sql)) {
 
             stmt.setLong(1, id);
             try (ResultSet rs = stmt.executeQuery()) {
                 if (rs.next()) {
                     name = rs.getString("name");
-                    price = new BigDecimal(String.valueOf(rs.getBigDecimal("price")));
+                    price = rs.getBigDecimal("price");
 
-                    Product product = new Product(name, price);
+                    product.setProductName(name);
+                    product.setPrice(price);
                     product.setId(id);
                     return product;
-                } else throw new AssertionError("No row with id " + id + " in the database");
+                } else return null;
             }
         } catch (SQLException e) {
             throw new RuntimeException("Database query failed while fetching name for id: " + id, e);

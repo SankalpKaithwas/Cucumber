@@ -2,6 +2,7 @@ package stepDefinitions;
 
 import api.Endpoints;
 import context.TestContext;
+import io.cucumber.java.PendingException;
 import io.cucumber.java.en.And;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
@@ -11,14 +12,15 @@ import io.restassured.response.Response;
 import models.Product;
 import org.junit.jupiter.api.Assertions;
 import utils.response.reader.ResponseReader;
+import utils.utility.Utilities;
 
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
 
-import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static utils.response.reader.ResponseReader.readList;
+import static utils.response.reader.ResponseReader.readAll;
 
 public class ProductApiSteps {
 
@@ -50,18 +52,11 @@ public class ProductApiSteps {
     brings back the data-leak problem this class exists to prevent.
     */
 
-    @When("get the product using id {long}")
-    public void getTheProductUsingID(long id) {
-        Response response = context.getRequest().get(Endpoints.PRODUCT_BY_ID, id);
-        context.setResponse(response);
-        Assertions.assertEquals(200, response.statusCode());
-    }
-
     @Then("the response status code should be {int}")
-    public int the_Response_Status_Code_Should_Be(int expectedStatusCode) {
+    public void the_Response_Status_Code_Should_Be(int expectedStatusCode) {
         int statusCode = context.getResponse().getStatusCode();
-        Assertions.assertEquals(expectedStatusCode, statusCode, "Unexpected HTTP status code");
-        return statusCode;
+        assertThat(statusCode).as("HTTP Status. Body "
+                + context.getResponse().asString()).isEqualTo(expectedStatusCode);
     }
 
     @When("the client sends {string} request to {string}")
@@ -72,33 +67,25 @@ public class ProductApiSteps {
         context.resetRequest();
     }
 
-    @Given("the path parameter {string} is set to {string}")
-    public void setPathParam(String paramName, String paramValue) {
-        switch (paramName) {
-            case "id":
-                context.getRequest().pathParam(paramName, Long.parseLong(paramValue));
-                break;
-            case "anything":
-                context.getRequest().pathParam(paramName, "anything");
-                break;
-            default:
-                context.getRequest().pathParam(paramName, "default");
-                break;
-        }
-    }
-
     @Given("the request body is a product with name {string} and price {bigdecimal}")
     public void theRequestBodyIsAProductWithNameAndPrice(String name, BigDecimal price) {
         context.setProduct(new Product(name, price));
-//        context.setProduct(new Product(name
-//                + "_" + UUID.randomUUID().toString().substring(0,3), price));
+    }
+
+    @Given("the request body is a product with name {string} plus random suffix and price {bigdecimal}")
+    public void theRequestBodyIsAProductWithNamePlusRandomSuffixAndPrice(String name, BigDecimal price) {
+        String productName = Utilities.generateRandomName(name);
+        context.setProduct(new Product(productName, price));
     }
 
     @And("the response error for {string} should contain {string}")
-    public void theResponseErrorForShouldContain(String error, String value) {
-        List<String> strings = readList(context.getResponse(), error);
-        assertTrue(strings.contains(value));
+    public void theResponseErrorShouldContain(String error, String expected) {
+        List<String> errors = readAll(context.getResponse(), error);
+//        assertThat(errors).as("errors for " + error).contains(expected); exact match: one of the error entries equals the value
 
+        // anyMatch - substring match: any error entry containing the value
+        assertThat(errors).as("error values for " + error)
+                .anyMatch(v -> v.contains(expected));
     }
 
     @And("product is added to request body")
@@ -118,16 +105,12 @@ public class ProductApiSteps {
 
     @Given("the path parameter {string} is set to request")
     public void setPathParamToRequest(String paramName) {
-        switch (paramName) {
+        switch (paramName.toLowerCase()) {
             case "id":
                 context.getRequest().pathParam(paramName, context.getCreatedProductId());
                 break;
-            case "anything":
-                context.getRequest().pathParam(paramName, "anything");
-                break;
             default:
-                context.getRequest().pathParam(paramName, "default");
-                break;
+                throw new IllegalArgumentException("Invalid path parameter " + paramName);
         }
     }
 
@@ -139,20 +122,64 @@ public class ProductApiSteps {
 
     @Given("a product {string} priced {bigdecimal} exists")
     public void productExists(String name, BigDecimal price) {
-        Product product = new Product(name
-                + "_" + UUID.randomUUID().toString().substring(0, 3), price);
+        String productName = Utilities.generateRandomName(name);
+        Product product = new Product(productName, price);
         Response response = context.getApiClient().newRequest()
                 .body(product).post(Endpoints.PRODUCTS);
         /* getApiClient().newRequest() for the setup call. The setup uses its own request on
         purpose, so its body doesn’t leak into the request the scenario sends next.
         This is the case where bypassing getRequest() is right*/
 
-        assertThat(response.statusCode()).as("setup: create product")
+        assertThat(response.statusCode()).as("setup: create product ststus code")
                 .isEqualTo(201);
 
         Long id = Long.valueOf(ResponseReader.readResponse(response, "Id"));
         context.setCreatedProductId(id);
-        context.getRequest().pathParam("id", id);
+        context.setProduct(product);
         context.trackForCleanup(id);
+    }
+
+    @And("the query parameter {string} is set to {string}")
+    public void theQueryParameterIsSetTo(String queryParam, String queryParamValue) {
+        switch (queryParam) {
+            case "productName" -> context.getRequest().queryParams("productName", queryParamValue);
+            case "minimumPrice" -> context.getRequest().queryParams("min", queryParamValue);
+            case "maximumPrice" -> context.getRequest().queryParams("max", queryParamValue);
+            case "maxPrice" -> context.getRequest().queryParams("maxPrice", queryParamValue);
+            case "page" -> context.getRequest().queryParams("page", queryParamValue);
+            case "size" -> context.getRequest().queryParams("size", queryParamValue);
+            default -> throw new IllegalStateException("Unexpected value: " + queryParam);
+        }
+        context.getQueryParams().put(queryParam, queryParamValue);
+    }
+
+    @And("the response {string} should be {string}")
+    public void theResponseShouldBe(String tag, String value) {
+        List<String> responseTag = readAll(context.getResponse(), tag);
+        assertThat(responseTag).as("response " + tag).contains(value);
+    }
+
+    @And("every product name in the response Data should contain {string}")
+    public void everyProductNameInTheResponseDataShouldContain(String productName) {
+        List<String> products = ResponseReader.readAll(context.getResponse(), "Name");
+        Assertions.assertFalse(products.isEmpty(), "No products found in response");
+        products.forEach(n -> assertTrue(n.toLowerCase().contains(productName.toLowerCase()),
+                n + " does not contain " + productName));
+    }
+
+    @And("the empty product is created")
+    public void theEmptyProductIsCreated() {
+        context.setProduct(new Product());
+    }
+
+    @Given("the path parameter id is set to {string}")
+    public void thePathParameterIsSetTo(String parameter) {
+        context.getRequest().pathParam("id", parameter);
+    }
+
+    @And("the response price should be {double}")
+    public void theResponsePriceShouldBe(BigDecimal expected) {
+        assertThat(ResponseReader.getPrice(context.getResponse()))
+                .as("price").isEqualByComparingTo(expected);
     }
 }

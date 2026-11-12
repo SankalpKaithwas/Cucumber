@@ -218,8 +218,8 @@ Feature: Product Feature
     Then the response "Size" should be "<Size>"
     Then the response "Message" should be "<Message>"
     Examples:
-      | Page | Size | Size | Message|
-      | 0    | 9    | 9                |Operation successful|
+      | Page | Size | Message|
+      | 0    | 9    |Operation successful|
 
   Scenario Outline: Get an existing products detail by Products_name - JSON response
     Given the request header "Accept" is set to "application/json"

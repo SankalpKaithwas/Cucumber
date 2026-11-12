@@ -6,7 +6,6 @@ import io.restassured.config.RestAssuredConfig;
 import io.restassured.filter.log.LogDetail;
 import io.restassured.filter.log.RequestLoggingFilter;
 import io.restassured.filter.log.ResponseLoggingFilter;
-import io.restassured.response.Response;
 import io.restassured.specification.RequestSpecification;
 import utils.config.ConfigFileReader;
 

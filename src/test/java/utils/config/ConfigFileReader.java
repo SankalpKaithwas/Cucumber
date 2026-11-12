@@ -29,11 +29,11 @@ public final class ConfigFileReader {
         try (InputStream input = ConfigFileReader.class.getClassLoader().getResourceAsStream(fileName)) {
 //        try (InputStream input = ConfigFileReader.class.getClassLoader().getResourceAsStream("config.properties")) {
             if (input == null) {
-                throw new IllegalStateException("Configuration file not found on classpath: " + "config.properties");
+                throw new IllegalStateException("Configuration file not found on classpath: " + fileName);
             }
             PROPS.load(input);
         } catch (IOException e) {
-            throw new UncheckedIOException("Cannot read " + "config.properties", e);
+            throw new UncheckedIOException("Cannot read " + fileName, e);
         }
     }
 

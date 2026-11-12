@@ -1,20 +1,18 @@
 package stepDefinitions;
 
 import context.TestContext;
-import io.cucumber.java.PendingException;
 import io.cucumber.java.en.And;
 import io.restassured.path.json.config.JsonPathConfig;
 import io.restassured.response.Response;
 import models.Product;
-import net.bytebuddy.asm.Advice;
 import org.junit.jupiter.api.Assertions;
 import utils.DatabaseHelper.DatabaseHelper;
 import utils.response.reader.ResponseReader;
 
 import java.math.BigDecimal;
-import java.sql.DriverManager;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class ProductDbSteps {
@@ -30,20 +28,6 @@ public class ProductDbSteps {
         this.context = context;
     }
 
-
-    @And("the product with id {long} should exist in the database")
-    public void theProductShouldExistInTheDatabase(long id) {
-        // to check if same context is hared by all classes during one scenario execution
-//        int i = System.identityHashCode(context);
-//        System.out.println(i);
-
-        Response response = context.getResponse();
-        Product expected = getProductDetails(response);
-        Product product = findRow(id);
-        assertThat(product.getProductName()).as("name column").isEqualTo(expected.getProductName());
-        assertThat(product.getPrice()).as("price column").isEqualByComparingTo(expected.getPrice());
-        //isEqualByComparingTo() ignores the difference between 140.0 and 140.00
-    }
 
     private Product getProductDetails(Response response) {
 
@@ -83,8 +67,29 @@ public class ProductDbSteps {
     @And("the product with id of new product should exist in the database")
     public void theProductWithIdOfNewProductShouldExistInTheDatabase() {
         DatabaseHelper db = context.getDatabaseHelper();
-        assertTrue(db.isProductExists(context.getCreatedProductId()),
-                "Product should exist in the database");
+        boolean productExists = db.isProductExists(context.getCreatedProductId());
+        assertThat(productExists).as("Product exists")
+                .isTrue();
+    }
 
+    @And("the product {string} in the database should match")
+    public void theProductInTheDatabaseShouldMatch(String column) {
+        DatabaseHelper db = context.getDatabaseHelper();
+        Product productById = db.getProductById(context.getCreatedProductId());
+        switch(column.toLowerCase()){
+            case "name" -> Assertions.assertEquals(context.getProduct().getProductName(),productById.getProductName(),
+                    "Product name should be equal");
+            case "price" -> assertThat(context.getProduct().getPrice())
+                    .as("price column")
+                    .isEqualByComparingTo(productById.getPrice());
+            default -> throw new IllegalArgumentException("Unknown product column: " + column);
+        }
+    }
+
+    @And("the product should no longer exist in the database")
+    public void theProductShouldNoLongerExistInTheDatabase() {
+        DatabaseHelper db = context.getDatabaseHelper();
+        Assertions.assertFalse(db.isProductExists(context.getCreatedProductId()),
+                "Product " + context.getCreatedProductId() + " is still in the database after DELETE");
     }
 }

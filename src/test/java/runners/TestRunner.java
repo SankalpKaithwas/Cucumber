@@ -12,8 +12,8 @@ import static io.cucumber.junit.platform.engine.Constants.*;
 @Suite
 @IncludeEngines("cucumber")
 @ConfigurationParameter(key = FILTER_TAGS_PROPERTY_NAME, value = "@regression")
-@ConfigurationParameter(key = FEATURES_PROPERTY_NAME, value = "src/test/resources")
-@ConfigurationParameter(key = GLUE_PROPERTY_NAME, value = "stepDefinitions")
+@ConfigurationParameter(key = FEATURES_PROPERTY_NAME, value = "src/test/resources/features")
+@ConfigurationParameter(key = GLUE_PROPERTY_NAME, value = "stepDefinitions,hooks")
 @ConfigurationParameter(key = PLUGIN_PROPERTY_NAME,
         value = "pretty, json:target/cucumber-reports/cucumber.json, html:target/cucumber-reports/cucumber.html")
 public class TestRunner {
@@ -22,7 +22,7 @@ public class TestRunner {
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             try {
                 File reportOutputDirectory = new File("target/cucumber-html-reports");
-                File jsonReport = new File("target/cucumber-reports/cucumber.html");
+                File jsonReport = new File("target/cucumber-reports/cucumber.json");
 
                 if (jsonReport.exists()) {
                     Configuration configuration = new Configuration(reportOutputDirectory, "CucumberProductFT");

@@ -1,5 +1,6 @@
 package org.example;
 
+import java.math.BigDecimal;
 import java.util.UUID;
 
 //TIP To <b>Run</b> code, press <shortcut actionId="Run"/> or
@@ -37,6 +38,12 @@ public class Main {
             default->System.out.println("Infinity");
 
         }
+
+
+BigDecimal price = new BigDecimal("12.44");
+        double random = Math.random();
+        System.out.println(price.multiply(BigDecimal.valueOf((random))));
+        System.out.println(BigDecimal.valueOf(random));
 
     }
 }

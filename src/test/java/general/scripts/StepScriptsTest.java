@@ -3,7 +3,6 @@
 //import io.restassured.response.Response;
 //import org.junit.jupiter.api.BeforeEach;
 //import org.junit.jupiter.api.Test;
-//import old.step.definitions.ProductStepDefinitions;
 //
 //public class StepScriptsTest {
 //public static String baseUrl = "http://localhost:8080";
