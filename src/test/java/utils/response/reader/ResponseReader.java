@@ -11,20 +11,20 @@ import static java.util.Map.entry;
 public class ResponseReader {
 
 
-    public record Paths(String xml, String json, boolean multi) {
+    public record Paths(String xml, String json) {
     }
 
     private static final Map<String, Paths> FIELDS = Map.ofEntries(
-            entry("Success", new Paths("ApiResponse.Success", "Success", false)),
-            entry("Message", new Paths("ApiResponse.Message","Message", false )),
-            entry("StatusCode", new Paths("ApiResponse.StatusCode","StatusCode", false )),
-            entry("Id", new Paths("ApiResponse.Data.Id","Data.Id" ,false)),
-            entry("Name", new Paths("ApiResponse.Data.Name","Data.Name" , false)),
-            entry("Price", new Paths("ApiResponse.Data.Price","Data.Price" ,false )),
-            entry("Size", new Paths("ApiResponse.Data.Page.Size","Data.Page.Size" ,false )),
-            entry("Errors", new Paths("ErrorResponse.Errors","Errors", false)),
-            entry("Errors.Name", new Paths("ErrorResponse.Errors.Name","Errors.Name", true)),
-            entry("Errors.Price", new Paths("ErrorResponse.Errors.Price","Errors.Price", true)));
+            entry("Success", new Paths("ApiResponse.Success", "Success")),
+            entry("Message", new Paths("ApiResponse.Message","Message")),
+            entry("StatusCode", new Paths("ApiResponse.StatusCode","StatusCode")),
+            entry("Id", new Paths("ApiResponse.Data.Id","Data.Id")),
+            entry("Name", new Paths("ApiResponse.Data.Name","Data.Name")),
+            entry("Price", new Paths("ApiResponse.Data.Price","Data.Price")),
+            entry("Size", new Paths("ApiResponse.Data.Page.Size","Data.Page.Size")),
+            entry("Errors", new Paths("ErrorResponse.Errors","Errors")),
+            entry("Errors.Name", new Paths("ErrorResponse.Errors.Name","Errors.Name")),
+            entry("Errors.Price", new Paths("ErrorResponse.Errors.Price","Errors.Price")));
 
     public static String readResponse(Response response, String field) {
         Paths path = lookup(field);
@@ -52,11 +52,19 @@ public class ResponseReader {
 
     public static List<String> readAll(Response response, String field) {
         Paths paths = lookup(field);
-        if (paths.multi()) {
-            return readList(response, field);
+        if (isXml(response)) {
+            List<String> values = response.xmlPath().getList(paths.xml());
+            return values == null ? List.of() : values;
         }
-        String value = readResponse(response, field);
-        return value == null ? List.of() : List.of(value);
+        Object value = response.jsonPath().get(paths.json());
+        if (value == null) {
+            return List.of();
+        }
+        if (value instanceof List<?> list) {
+            return list.stream().map(String::valueOf).toList();
+        } else {
+           return List.of(String.valueOf(value));
+        }
     }
 
     private static boolean isXml(Response response) {

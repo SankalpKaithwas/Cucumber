@@ -107,7 +107,7 @@ public class ProductApiSteps {
     public void setPathParamToRequest(String paramName) {
         switch (paramName.toLowerCase()) {
             case "id":
-                context.getRequest().pathParam(paramName, context.getCreatedProductId());
+                context.getRequest().pathParam(paramName, context.requireCreatedProductId());
                 break;
             default:
                 throw new IllegalArgumentException("Invalid path parameter " + paramName);
@@ -177,9 +177,18 @@ public class ProductApiSteps {
         context.getRequest().pathParam("id", parameter);
     }
 
-    @And("the response price should be {double}")
+    @And("the response price should be {bigdecimal}")
     public void theResponsePriceShouldBe(BigDecimal expected) {
         assertThat(ResponseReader.getPrice(context.getResponse()))
                 .as("price").isEqualByComparingTo(expected);
     }
+
+    @And("every product price in the response should be between {bigdecimal} and {bigdecimal}")
+    public void everyPriceShouldBeBetween(BigDecimal min, BigDecimal max) {
+        List<String> prices = ResponseReader.readAll(context.getResponse(), "Price");
+        assertThat(prices).as("prices in response").isNotEmpty();
+        prices.forEach(p -> assertThat(new BigDecimal(p))
+                .as("price " + p).isBetween(min, max));
+    }
+
 }

@@ -53,7 +53,7 @@ public class ProductDbSteps {
     @And("the product {string} in the database should be {string}")
     public void the_Product_In_The_Database_Should_Be(String column, String expected) {
         DatabaseHelper dbHelper = context.getDatabaseHelper();
-        long id = context.getCreatedProductId();
+        long id = context.requireCreatedProductId();
         switch (column.toLowerCase()) {
             case "name"  -> assertThat(dbHelper.getProductNameById(id))
                     .as("name column").isEqualTo(expected);
@@ -67,7 +67,7 @@ public class ProductDbSteps {
     @And("the product with id of new product should exist in the database")
     public void theProductWithIdOfNewProductShouldExistInTheDatabase() {
         DatabaseHelper db = context.getDatabaseHelper();
-        boolean productExists = db.isProductExists(context.getCreatedProductId());
+        boolean productExists = db.isProductExists(context.requireCreatedProductId());
         assertThat(productExists).as("Product exists")
                 .isTrue();
     }
@@ -75,7 +75,7 @@ public class ProductDbSteps {
     @And("the product {string} in the database should match")
     public void theProductInTheDatabaseShouldMatch(String column) {
         DatabaseHelper db = context.getDatabaseHelper();
-        Product productById = db.getProductById(context.getCreatedProductId());
+        Product productById = db.getProductById(context.requireCreatedProductId());
         switch(column.toLowerCase()){
             case "name" -> Assertions.assertEquals(context.getProduct().getProductName(),productById.getProductName(),
                     "Product name should be equal");
@@ -89,7 +89,7 @@ public class ProductDbSteps {
     @And("the product should no longer exist in the database")
     public void theProductShouldNoLongerExistInTheDatabase() {
         DatabaseHelper db = context.getDatabaseHelper();
-        Assertions.assertFalse(db.isProductExists(context.getCreatedProductId()),
-                "Product " + context.getCreatedProductId() + " is still in the database after DELETE");
+        Assertions.assertFalse(db.isProductExists(context.requireCreatedProductId()),
+                "Product " + context.requireCreatedProductId() + " is still in the database after DELETE");
     }
 }

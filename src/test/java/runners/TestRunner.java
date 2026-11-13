@@ -3,6 +3,7 @@ import net.masterthought.cucumber.Configuration;
 import net.masterthought.cucumber.ReportBuilder;
 import org.junit.platform.suite.api.ConfigurationParameter;
 import org.junit.platform.suite.api.IncludeEngines;
+import org.junit.platform.suite.api.SelectPackages;
 import org.junit.platform.suite.api.Suite;
 import java.io.File;
 import java.util.Collections;
@@ -12,7 +13,7 @@ import static io.cucumber.junit.platform.engine.Constants.*;
 @Suite
 @IncludeEngines("cucumber")
 @ConfigurationParameter(key = FILTER_TAGS_PROPERTY_NAME, value = "@regression")
-@ConfigurationParameter(key = FEATURES_PROPERTY_NAME, value = "src/test/resources/features")
+@SelectPackages("features")
 @ConfigurationParameter(key = GLUE_PROPERTY_NAME, value = "stepDefinitions,hooks")
 @ConfigurationParameter(key = PLUGIN_PROPERTY_NAME,
         value = "pretty, json:target/cucumber-reports/cucumber.json, html:target/cucumber-reports/cucumber.html")

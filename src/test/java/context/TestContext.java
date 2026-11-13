@@ -84,10 +84,6 @@ public class TestContext {
         this.response = response;
     }
 
-    public Long getCreatedProductId() {
-        return createdProductId;
-    }
-
     public void setCreatedProductId(Long createdProductId) {
         this.createdProductId = createdProductId;
     }
@@ -97,6 +93,15 @@ public class TestContext {
         return queryParams;
     }
 
+    public long requireCreatedProductId() {
+        if (createdProductId == null) {
+            throw new IllegalStateException(
+                    "No product id captured in this scenario. Create one first with "
+                            + "'a product ... exists', or use 'the product Id is remembered'"
+                            + " after a successful POST.");
+        }
+        return createdProductId;
+    }
 
     /**
      * Remember an id so the @After hook can delete the test data again.

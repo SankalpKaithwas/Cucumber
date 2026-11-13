@@ -9,8 +9,8 @@ Feature: Product Feature
     Given the request body is a product with name "Door Lock" plus random suffix and price 7.45
     And product is added to request body
     When the client sends "POST" request to ""
-    And the product Id is remembered
     Then the response status code should be 201
+    And the product Id is remembered
     And the product with id of new product should exist in the database
 
   Scenario: GET Product details using products ID
@@ -59,17 +59,19 @@ Feature: Product Feature
     And the query parameter "maximumPrice" is set to "<maximumPrice>"
     When the client sends "GET" request to "/range"
     Then the response status code should be 200
+    And every product price in the response should be between <minimumPrice> and <maximumPrice>
     Examples:
       | minimumPrice | maximumPrice |
-      | 150          | 200          |
+      | 150.00       | 190.00       |
 
   Scenario Outline: Get all products detail within max price limit
     And the query parameter "maxPrice" is set to "<MaxPrice>"
     When the client sends "GET" request to "/filter"
     Then the response status code should be 200
+    Then every product price in the response should be between 0.00 and <MaxPrice>
     Examples:
       | MaxPrice |
-      | 20       |
+      | 20.00    |
 
   Scenario Outline: Get all products detail Using Pagination
     And the query parameter "page" is set to "<Page>"
@@ -83,14 +85,14 @@ Feature: Product Feature
       | 0    | 9    | Operation successful |
 
   Scenario Outline: Get an existing products detail by Products_name
-    And the query parameter "productName" is set to "Adjustable Aluminum Laptop Stand"
+    And the query parameter "productName" is set to "Keyboard"
     When the client sends "GET" request to "/search"
     Then the response status code should be 200
     And the response "Success" should be "<Success>"
     And every product name in the response Data should contain "<ProductName>"
     Examples:
-      | Success | ProductName                      |
-      | true    | Adjustable Aluminum Laptop Stand |
+      | Success | ProductName |
+      | true    | Keyboard    |
 
     # ----------------------------- Validations --------------------------------
   Scenario Outline: Validation GET after deleting using ID should fail with 404 Not Found
