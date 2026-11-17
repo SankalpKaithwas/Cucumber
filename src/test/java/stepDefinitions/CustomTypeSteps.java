@@ -1,4 +1,4 @@
-package Sample.Feature.File.Cucumber.Gherkin;
+package stepDefinitions;
 
 import io.cucumber.java.ParameterType;
 

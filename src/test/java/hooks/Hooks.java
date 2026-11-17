@@ -1,13 +1,9 @@
 package hooks;
 
-import api.Endpoints;
 import context.TestContext;
 import io.cucumber.java.After;
 import io.cucumber.java.Before;
 import io.cucumber.java.Scenario;
-import io.restassured.response.Response;
-import models.Product;
-import org.junit.jupiter.api.Assertions;
 
 public class Hooks {
 
@@ -33,24 +29,9 @@ public class Hooks {
             scenario.attach(context.getResponse().asString(), "text/plain", "Last API response");
         }
         context.cleanUp();
-//        restore_Existing_Product();
 
         System.out.println(">>> Ending scenario: " + scenario.getName());
     }
     //@After runs whether the scenario passed or failed, so the cleanup always happens
-
-
-//    private void restore_Existing_Product() {
-//        Product product = new Product(context.getOriginalName() , context.getOriginalPrice());
-//
-//        if (context.getExistingProductId() != null) {
-//            Response patch = context.getRequest().body(product)
-//                    .patch(Endpoints.PRODUCT_BY_ID);
-//
-//            context.setExistingProductId(null);
-//            Assertions.assertEquals(200, patch.getStatusCode(),
-//                    "RESTORE FAILED - product data was left modified: " + patch.asString());
-//        }
-//    }
 
 }

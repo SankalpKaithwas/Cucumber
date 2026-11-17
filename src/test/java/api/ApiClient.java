@@ -66,18 +66,4 @@ public class ApiClient {
     public RequestSpecification newRequest() {
         return given().spec(spec);
     }
-
-
-    /* NOTES ->
-    1. given().spec(spec) starts a request that already includes everything from the template.
-    2. .body(...) adds the payload for this call only.
-    3. .when().get(...) is the actual call. get, post, put, patch and delete are the five methods.
-    4. {id} with id as the second argument: REST Assured substitutes the placeholder, so you never concatenate URLs by
-    hand. It also URL-encodes the value.
-    5.Return type Response: the method does not assert anything. It hands the response back, and the step definition
-    decides what to check. Keep it that way, because the same call can be correct in one scenario and wrong in
-    another (a 404 is the expected result of “get a deleted product”).
-    6. Object id accepts a Long, an int or a String, which is useful for negative tests like /api/products/abc.
-     */
-
 }

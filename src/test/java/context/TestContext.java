@@ -7,7 +7,6 @@ import io.restassured.specification.RequestSpecification;
 import models.Product;
 import utils.DatabaseHelper.DatabaseHelper;
 
-import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -31,9 +30,8 @@ public class TestContext {
 
     private Product product;
     private Response response;
-    private Long productId;
     private final List<Long> createdIds = new ArrayList<>();
-
+    private Product originalProduct;
     private Long createdProductId;
 
     private final Map<String, String> queryParams = new HashMap<>();
@@ -76,6 +74,12 @@ public class TestContext {
         this.product = product;
     }
 
+    public void setOriginalProduct(Product originalProduct){
+        this.originalProduct = originalProduct;
+    }
+    public Product getOriginalProduct(){
+        return originalProduct;
+    }
     public Response getResponse() {
         return response;
     }
@@ -131,11 +135,7 @@ public class TestContext {
             }
         }
         createdIds.clear();
-        response = null;
-        createdProductId = null;
-        queryParams.clear();
-
+//PicoContainer discards the whole context after the scenario, so
+// nulling response and createdProductId achieves nothing.
     }
-
-    
 }

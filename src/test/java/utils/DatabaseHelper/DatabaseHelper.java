@@ -5,7 +5,6 @@ import utils.config.ConfigFileReader;
 
 import java.math.BigDecimal;
 import java.sql.*;
-import java.util.Optional;
 
 
 public class DatabaseHelper {
@@ -120,4 +119,20 @@ public class DatabaseHelper {
         }
     }
 
+    public Product getProductThatExists() {
+        try (Connection connection = getConnection();
+             PreparedStatement preparedStatement =
+                     connection.prepareStatement("SELECT * FROM products\n" +
+                             "ORDER BY RAND()\n" +
+                             "LIMIT 1;")) {
+            ResultSet resultSet = preparedStatement.executeQuery();
+            if (resultSet.next()) {
+                return new Product(resultSet.getString("name"),
+                        resultSet.getBigDecimal("price"));
+            }
+             return null;
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
 }

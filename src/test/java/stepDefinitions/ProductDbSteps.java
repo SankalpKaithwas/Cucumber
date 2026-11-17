@@ -12,8 +12,6 @@ import utils.response.reader.ResponseReader;
 import java.math.BigDecimal;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class ProductDbSteps {
 
@@ -74,15 +72,23 @@ public class ProductDbSteps {
 
     @And("the product {string} in the database should match")
     public void theProductInTheDatabaseShouldMatch(String column) {
+        int status = context.getResponse().getStatusCode();
+        boolean applied = status >= 200 && status < 300;
+        Product newProduct = context.getProduct();
+        String expectedName = (applied && newProduct.getProductName() != null)
+                ? newProduct.getProductName() : context.getOriginalProduct().getProductName();
+        BigDecimal expectedPrice = (applied && newProduct.getPrice() != null)
+                ? newProduct.getPrice() : context.getOriginalProduct().getPrice();
         DatabaseHelper db = context.getDatabaseHelper();
         Product productById = db.getProductById(context.requireCreatedProductId());
-        switch(column.toLowerCase()){
-            case "name" -> Assertions.assertEquals(context.getProduct().getProductName(),productById.getProductName(),
-                    "Product name should be equal");
-            case "price" -> assertThat(context.getProduct().getPrice())
+        switch (column.toLowerCase()) {
+            case "name" -> assertThat(productById.getProductName()).as(
+                    "Product name should be equal").isEqualTo(expectedName);
+            case "price" -> assertThat(productById.getPrice())
                     .as("price column")
-                    .isEqualByComparingTo(productById.getPrice());
+                    .isEqualByComparingTo(expectedPrice);
             default -> throw new IllegalArgumentException("Unknown product column: " + column);
+
         }
     }
 

@@ -1,4 +1,4 @@
-package org.example;
+package example;
 
 import java.math.BigDecimal;
 import java.util.UUID;

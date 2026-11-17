@@ -1,4 +1,4 @@
-package Sample.Feature.File.Cucumber.Gherkin;
+package sample.gherkin;
 
 import io.cucumber.datatable.DataTable;
 import io.cucumber.java.en.Given;

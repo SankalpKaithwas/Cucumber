@@ -2,7 +2,6 @@ package stepDefinitions;
 
 import api.Endpoints;
 import context.TestContext;
-import io.cucumber.java.PendingException;
 import io.cucumber.java.en.And;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
@@ -11,12 +10,12 @@ import io.restassured.http.Method;
 import io.restassured.response.Response;
 import models.Product;
 import org.junit.jupiter.api.Assertions;
+import utils.DatabaseHelper.DatabaseHelper;
 import utils.response.reader.ResponseReader;
 import utils.utility.Utilities;
 
 import java.math.BigDecimal;
 import java.util.List;
-import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -72,9 +71,9 @@ public class ProductApiSteps {
         context.setProduct(new Product(name, price));
     }
 
-    @Given("the request body is a product with name {string} plus random suffix and price {bigdecimal}")
-    public void theRequestBodyIsAProductWithNamePlusRandomSuffixAndPrice(String name, BigDecimal price) {
-        String productName = Utilities.generateRandomName(name);
+    @Given("the request body is a product with name {string} and price {bigdecimal} with random suffix: {booleanTwo}")
+    public void theRequestBodyIsAProductWithNameSuffixAndPrice(String name, BigDecimal price, boolean suffix) {
+        String productName = suffix ? Utilities.generateRandomName(name): name;
         context.setProduct(new Product(productName, price));
     }
 
@@ -88,7 +87,7 @@ public class ProductApiSteps {
                 .anyMatch(v -> v.contains(expected));
     }
 
-    @And("product is added to request body")
+    @And("the product is added to request body")
     public void addTheProductToRequest() {
         context.getRequest().body(context.getProduct());
     }
@@ -136,6 +135,7 @@ public class ProductApiSteps {
         Long id = Long.valueOf(ResponseReader.readResponse(response, "Id"));
         context.setCreatedProductId(id);
         context.setProduct(product);
+        context.setOriginalProduct(product);
         context.trackForCleanup(id);
     }
 
@@ -191,4 +191,31 @@ public class ProductApiSteps {
                 .as("price " + p).isBetween(min, max));
     }
 
+    @Given("the request body is a product with only the name {string} plus random suffix")
+    public void theRequestBodyIsAProductWithOnlyTheNamePlusRandomSuffix(String productName) {
+        Product product = new Product();
+        product.setProductName(Utilities.generateRandomName(productName));
+        context.setProduct(product);
+    }
+
+    @Given("the request body is a product with only the name {string}")
+    public void theRequestBodyIsAProductWithOnlyTheName(String productName) {
+        Product product = new Product();
+        product.setProductName(productName);
+        context.setProduct(product);
+    }
+
+    @Given("the request body is a product with only the price {bigdecimal}")
+    public void theRequestBodyIsAProductWithOnlyThePrice(BigDecimal price) {
+       Product product = new Product();
+       product.setPrice(price);
+       context.setProduct(product);
+    }
+
+    @And("an existing product is added to the request")
+    public void anExistingProductIsAddedToTheRequest() {
+        DatabaseHelper helper = new DatabaseHelper();
+        Product productThatExists = helper.getProductThatExists();
+        context.setProduct(productThatExists);
+    }
 }
