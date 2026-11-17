@@ -1,4 +1,4 @@
-@regression
+@regression @put
 Feature: PUT Products
 
   Scenario Outline: Update a product Using PUT after creating a new product
@@ -17,7 +17,7 @@ Feature: PUT Products
       | true    | Updated Successfully |
 
        # ----------------------------- Validations --------------------------------
-
+  @negative
   Scenario: PUT and existing product with blank name returns 400
     Given a product "Flashlight" priced 5.30 exists
     And the request body is a product with name "" and price 5.00 with random suffix: false
@@ -29,6 +29,7 @@ Feature: PUT Products
     And the product "price" in the database should match
     And the product "name" in the database should match
 
+  @negative
   Scenario Outline: PUT an existing product with Invalid price returns 400
     Given a product "Flashlight" priced 5.30 exists
     And the request body is a product with name "PUT" and price <Price> with random suffix: true
@@ -46,7 +47,7 @@ Feature: PUT Products
       | -1.00 | Price must be greater than zero |
       | -0.01 | Price must be greater than zero |
 
-
+  @negative
   Scenario: PUT to an existing product’s name returns 409
     Given a product "Bottle" priced 12.22 exists
     And an existing product is added to the request
@@ -58,7 +59,3 @@ Feature: PUT Products
     And the response error for "Errors" should contain "already exists."
     And the product "name" in the database should match
     And the product "price" in the database should match
-
-
-
-

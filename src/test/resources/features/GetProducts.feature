@@ -60,6 +60,7 @@ Feature: GET Products
 
     # ----------------------------- Validations --------------------------------
 
+  @negative
   Scenario Outline: GET a non existing products detail by Products_name throws validation
     Given the query parameter "productName" is set to "adas"
     When the client sends "GET" request to "/search"
@@ -70,6 +71,7 @@ Feature: GET Products
       | Success | Message                                     |
       | true    | No Product(s) Found matching keyword 'adas' |
 
+  @negative
   Scenario Outline: GET when min price is greater than max price limit returns 400 Bad Request
     Given the query parameter "minimumPrice" is set to "<minimumPrice>"
     And the query parameter "maximumPrice" is set to "<maximumPrice>"
@@ -81,6 +83,7 @@ Feature: GET Products
       | minimumPrice | maximumPrice | Message     | Errors                                       |
       | 150          | 90           | Bad Request | Min price must not be greater than Max price |
 
+  @negative
   Scenario Outline: GET when max price is not present when finding product within min and max price limit
     Given the query parameter "minimumPrice" is set to "<minimumPrice>"
     When the client sends "GET" request to "/range"
@@ -91,6 +94,7 @@ Feature: GET Products
       | minimumPrice | StatusCode | Message     | Errors                                   |
       | 150          | 400        | Bad Request | Required parameter 'max' is not present. |
 
+  @negative
   Scenario Outline: GET product details with String ID returns 400 Bad Request
     Given the path parameter id is set to "asd"
     When the client sends "GET" request to "/{id}"
@@ -101,6 +105,7 @@ Feature: GET Products
       | StatusCode | Message     | Errors                                   |
       | 400        | Bad Request | Failed to convert 'id' with value: 'asd' |
 
+  @negative
   Scenario Outline: GET with Invalid Sort property foo returns 400 Bad Request
     When the client sends "GET" request to "/paged?sort=foo"
     Then the response status code should be <StatusCode>
@@ -110,6 +115,7 @@ Feature: GET Products
       | StatusCode | Message     | Errors                     |
       | 400        | Bad Request | Invalid Sort property: foo |
 
+  @negative
   Scenario Outline: GET with Invalid URI returns 404 Resource Not Found
     When the client sends "GET" request to "/paged/sort"
     Then the response status code should be <StatusCode>
@@ -119,6 +125,7 @@ Feature: GET Products
       | StatusCode | Message            | Errors                                      |
       | 404        | Resource Not Found | No static resource api/products/paged/sort. |
 
+  @negative
   Scenario Outline: Validation GET after DELETE using ID should fail with 404 Not Found
     Given a product "Delete" priced 23.12 exists
     And the path parameter "id" is set to request

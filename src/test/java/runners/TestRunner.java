@@ -12,7 +12,7 @@ import static io.cucumber.junit.platform.engine.Constants.*;
 
 @Suite
 @IncludeEngines("cucumber")
-@ConfigurationParameter(key = FILTER_TAGS_PROPERTY_NAME, value = "@regression")
+@ConfigurationParameter(key = FILTER_TAGS_PROPERTY_NAME, value = "@regression and @negative")
 @SelectPackages("features")
 @ConfigurationParameter(key = GLUE_PROPERTY_NAME, value = "stepDefinitions,hooks")
 @ConfigurationParameter(key = PLUGIN_PROPERTY_NAME,
@@ -42,3 +42,14 @@ public class TestRunner {
         }));
     }
 }
+/*
+@regression - everything
+@regression and @patch- all PATCH scenarios
+@negative - every rejection case, across all verbs
+@regression and not @negative - the happy paths only
+@post or @put - both verbs
+
+If using Execute maven Gaol or Running from Run - edit configuration below gets overrided
+@ConfigurationParameter(key = FILTER_TAGS_PROPERTY_NAME, value = "@regression and @negative")
+
+ */

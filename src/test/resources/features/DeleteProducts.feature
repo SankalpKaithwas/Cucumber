@@ -1,4 +1,4 @@
-@regression
+@regression @delete
 Feature: DELETE Products
 
   Scenario: DELETE a product after creating a new product
@@ -11,6 +11,7 @@ Feature: DELETE Products
 
    # ----------------------------- Validations --------------------------------
 
+  @negative
   Scenario Outline: Cannot delete all the products
     When the client sends "DELETE" request to ""
     Then the response status code should be <StatusCode>
@@ -20,6 +21,7 @@ Feature: DELETE Products
       | StatusCode | Message            | Errors                            |
       | 405        | Method Not Allowed | Method 'DELETE' is not supported. |
 
+  @negative
   Scenario Outline: DELETE a product which doesnt exist returns 404 Not Found
     Given the path parameter id is set to "771231"
     When the client sends "DELETE" request to "/{id}"
