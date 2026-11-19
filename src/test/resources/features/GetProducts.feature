@@ -122,8 +122,8 @@ Feature: GET Products
     And the response "Message" should be "<Message>"
     And the response "Errors" should be "<Errors>"
     Examples:
-      | StatusCode | Message            | Errors                                      |
-      | 404        | Resource Not Found | No static resource api/products/paged/sort. |
+      | StatusCode | Message            | Errors                                                                             |
+      | 404        | Resource Not Found | No static resource api/products/paged/sort for request '/api/products/paged/sort'. |
 
   @negative
   Scenario Outline: Validation GET after DELETE using ID should fail with 404 Not Found

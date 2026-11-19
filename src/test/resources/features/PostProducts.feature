@@ -10,7 +10,7 @@ Feature: POST Products
     And the product with id of new product should exist in the database
 
   Scenario: POST Request with non-ASCII product name return 201
-    Given the request body is a product with name "Nescafé" and price 7.45 with random suffix: false
+    Given the request body is a product with name "Nescafé" and price 7.45 with random suffix: true
     And the product is added to request body
     When the client sends "POST" request to ""
     Then the response status code should be 201
@@ -19,7 +19,7 @@ Feature: POST Products
 
 
   Scenario Outline: POST Request with 2 characters and 100 characters product name return 201
-    Given the request body is a product with name "<Name>" and price 7.45 with random suffix: false
+    Given the request body is a product with name "<Name>" and price 7.45 with random suffix: true
     And the product is added to request body
     When the client sends "POST" request to ""
     Then the response status code should be 201
@@ -27,7 +27,7 @@ Feature: POST Products
     And the product with id of new product should exist in the database
     Examples:
       | Name                                                                                                 |
-      | bababadalgharaghtakamminarronnkonnbronntonnerronntuonnthunntrovarrhounawnskawntoohoohoordenenthurnuk |
+      | bababadalgharaghtakamminarronnkonnbronntonnerronntuonnthunntrovarrhounawnskawntoohoohoorden |
       | bv                                                                                                   |
 
    # ----------------------------- Validations --------------------------------

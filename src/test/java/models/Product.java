@@ -23,6 +23,8 @@ private Long id;
 @XmlElement(name = "name")
 private String productName;
 
+@JsonProperty("price")
+@XmlElement(name = "price")
 private BigDecimal price;
 
     public Product() {
