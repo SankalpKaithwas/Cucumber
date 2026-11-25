@@ -119,7 +119,7 @@ public class DatabaseHelper {
         }
     }
 
-    public Product getProductThatExists() {
+    public Product getRandomProductThatExists() {
         try (Connection connection = getConnection();
              PreparedStatement preparedStatement =
                      connection.prepareStatement("SELECT * FROM products\n" +

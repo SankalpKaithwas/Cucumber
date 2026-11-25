@@ -7,7 +7,7 @@ Feature: POST Products
     When the client sends "POST" request to ""
     Then the response status code should be 201
     And the product Id is remembered
-    And the product with id of new product should exist in the database
+    And the new product should exist in the database
 
   Scenario: POST Request with non-ASCII product name return 201
     Given the request body is a product with name "Nescafé" and price 7.45 with random suffix: true
@@ -15,7 +15,7 @@ Feature: POST Products
     When the client sends "POST" request to ""
     Then the response status code should be 201
     And the product Id is remembered
-    And the product with id of new product should exist in the database
+    And the new product should exist in the database
 
 
   Scenario Outline: POST Request with 2 characters and 100 characters product name return 201
@@ -24,11 +24,21 @@ Feature: POST Products
     When the client sends "POST" request to ""
     Then the response status code should be 201
     And the product Id is remembered
-    And the product with id of new product should exist in the database
+    And the new product should exist in the database
     Examples:
-      | Name                                                                                                 |
+      | Name                                                                                        |
       | bababadalgharaghtakamminarronnkonnbronntonnerronntuonnthunntrovarrhounawnskawntoohoohoorden |
-      | bv                                                                                                   |
+      | bv                                                                                          |
+
+    Scenario: POST request returns 201 SUCCESS response for role : admin
+      Given I am authenticated as "Admin"
+      And the request body is a product with name "Umbrella" and price 34.7 with random suffix: true
+      And the product is added to request body
+      When the client sends "POST" request to ""
+      And the product Id is remembered
+      Then the response status code should be 201
+      And the product "name" in the database should match
+      And the product "price" in the database should match
 
    # ----------------------------- Validations --------------------------------
 

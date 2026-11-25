@@ -123,7 +123,7 @@ public class ProductApiSteps {
     public void productExists(String name, BigDecimal price) {
         String productName = Utilities.generateRandomName(name);
         Product product = new Product(productName, price);
-        Response response = context.getApiClient().newRequest()
+        Response response = context.getApiClient().newRequest("admin")
                 .body(product).post(Endpoints.PRODUCTS);
         /* getApiClient().newRequest() for the setup call. The setup uses its own request on
         purpose, so its body doesn’t leak into the request the scenario sends next.
@@ -215,7 +215,12 @@ public class ProductApiSteps {
     @And("an existing product is added to the request")
     public void anExistingProductIsAddedToTheRequest() {
         DatabaseHelper helper = new DatabaseHelper();
-        Product productThatExists = helper.getProductThatExists();
+        Product productThatExists = helper.getRandomProductThatExists();
         context.setProduct(productThatExists);
+    }
+
+    @Given("I am authenticated as {string}")
+    public void iAmAuthenticatedAs(String role) {
+        context.setRole(role);
     }
 }

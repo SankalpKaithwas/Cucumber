@@ -62,8 +62,8 @@ public class ProductDbSteps {
         }
     }
 
-    @And("the product with id of new product should exist in the database")
-    public void theProductWithIdOfNewProductShouldExistInTheDatabase() {
+    @And("the new product should exist in the database")
+    public void theNewProductShouldExistInTheDatabase() {
         DatabaseHelper db = context.getDatabaseHelper();
         boolean productExists = db.isProductExists(context.requireCreatedProductId());
         assertThat(productExists).as("Product exists")
@@ -97,5 +97,13 @@ public class ProductDbSteps {
         DatabaseHelper db = context.getDatabaseHelper();
         Assertions.assertFalse(db.isProductExists(context.requireCreatedProductId()),
                 "Product " + context.requireCreatedProductId() + " is still in the database after DELETE");
+    }
+
+    @And("no product with the request name should exist in the database")
+    public void noProductWithTheRequestNameShouldExistInTheDatabase() {
+        String productName = context.getProduct().getProductName();
+        DatabaseHelper db = context.getDatabaseHelper();
+        Long latestIdByProductName = db.getLatestIdByProductName(productName);
+        assertThat(latestIdByProductName).as("No Product named: " + productName).isNull();
     }
 }

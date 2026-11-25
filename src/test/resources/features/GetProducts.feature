@@ -1,4 +1,4 @@
-@regression
+@regression @get
 Feature: GET Products
 
   Scenario: GET All Product

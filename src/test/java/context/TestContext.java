@@ -12,11 +12,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-/*Today all the GIVEN WHEN THEN AND ETC of this lives as fields inside the one big ProductStepDefinitions
-class (response, ids, original name for restore, and so on). That works while there is one class.
- The moment you split the steps into an API class and a DB class (which is the goal), they can’t
- see each other’s fields.
-TestContext is the answer: one small object that holds the scenario’s state, and every step class
+/*
+TestContext is one small object that holds the scenario’s state, and every step class
 receives the same instance.
 PicoContainer creates a fresh TestContext for every scenario and discards it afterwards.
 
@@ -27,20 +24,21 @@ public class TestContext {
 
     private ApiClient apiClient;
     private DatabaseHelper databaseHelper;
-
     private Product product;
     private Response response;
     private final List<Long> createdIds = new ArrayList<>();
     private Product originalProduct;
     private Long createdProductId;
+    private String role = "admin";
 
     private final Map<String, String> queryParams = new HashMap<>();
 
     private RequestSpecification request;
 
     public RequestSpecification getRequest() {
+
         if (request == null) {
-            request = getApiClient().newRequest();
+            request = getApiClient().newRequest(role);
         }
         return request;
     }
@@ -49,7 +47,7 @@ public class TestContext {
         request = null;
     }
 
-    /*Each scenario gets its own TestContext, so each gets its own ApiClient.
+    /* Each scenario gets its own TestContext, so each gets its own ApiClient.
     That’s intentional: nothing leaks from one scenario into the next.
      */
     public ApiClient getApiClient() {
@@ -74,12 +72,14 @@ public class TestContext {
         this.product = product;
     }
 
-    public void setOriginalProduct(Product originalProduct){
+    public void setOriginalProduct(Product originalProduct) {
         this.originalProduct = originalProduct;
     }
-    public Product getOriginalProduct(){
+
+    public Product getOriginalProduct() {
         return originalProduct;
     }
+
     public Response getResponse() {
         return response;
     }
@@ -92,9 +92,15 @@ public class TestContext {
         this.createdProductId = createdProductId;
     }
 
-
-    public Map<String, String> getQueryParams(){
+    public Map<String, String> getQueryParams() {
         return queryParams;
+    }
+
+    public void setRole(String role) {
+        if(request != null){
+            throw new IllegalStateException("Set the role before the request is built");
+        }
+        this.role = role;
     }
 
     public long requireCreatedProductId() {
@@ -123,7 +129,7 @@ public class TestContext {
     public void cleanUp() {
         for (Long id : createdIds) {
             try {
-                int status = getApiClient().newRequest()
+                int status = getApiClient().newRequest("admin")
                         .pathParam("id", id)
                         .delete(Endpoints.PRODUCT_BY_ID)
                         .statusCode();
